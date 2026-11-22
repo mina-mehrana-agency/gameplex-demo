@@ -1,0 +1,78 @@
+---
+import { partyLevels } from '../../data/party';
+const l = partyLevels[1];
+---
+<section class="party" id="party" data-levels={JSON.stringify(partyLevels)}>
+ <div class="wrap">
+  <div class="party-box rv">
+   <div>
+    <span class="eyebrow">Parties and events</span>
+    <h2>Level up your party</h2>
+    <p class="lead">Drag to set your group size. We’ll match you with the right way to celebrate, then send us a quote request.</p>
+    <label for="size" class="sr">Group size</label>
+    <div class="count"><span id="sizeOut">8</span><small>guests</small></div>
+    <div class="crowd" id="crowd" aria-hidden="true"></div>
+    <input type="range" id="size" min="1" max="80" value="8">
+   </div>
+   <div class="level" id="level" aria-live="polite">
+    <span class="lbl" id="lvLbl">{l.label}</span>
+    <h3 id="lvName">{l.name}</h3>
+    <p id="lvText">{l.text}</p>
+    <span class="tag" id="lvTag">{l.price}</span>
+    <div class="lv-cta"><a class="btn purple" href="/request-for-private-events?guests=8" id="lvCta" data-burst>Request a quote <svg><use href="#i-arrow"/></svg></a></div>
+   </div>
+  </div>
+ </div>
+</section>
+
+<style>
+.party{background:linear-gradient(180deg,var(--night-2),var(--night))}
+.party-box{border-radius:32px;background:linear-gradient(160deg,var(--grape-2),var(--grape));border:1px solid var(--line);padding:40px;display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center}
+.crowd{display:flex;flex-wrap:wrap;gap:6px;min-height:104px;align-content:flex-start;margin:18px 0}
+.crowd :global(i){width:16px;height:20px;display:block;background:var(--lilac);border-radius:8px 8px 5px 5px;position:relative;animation:popIn .3s var(--ease)}
+.crowd :global(i::before){content:"";position:absolute;width:11px;height:11px;border-radius:50%;background:inherit;left:2.5px;top:-9px}
+.crowd :global(i:nth-child(5n)){background:var(--ticket)}.crowd :global(i:nth-child(7n)){background:var(--mint)}.crowd :global(i:nth-child(3n)){background:var(--coral)}
+@keyframes popIn{from{transform:scale(0) translateY(10px)}}
+input[type=range]{width:100%;accent-color:var(--ticket);height:28px;cursor:pointer}
+.count{font:800 clamp(3rem,6vw,4.4rem)/1 var(--display);color:var(--ticket);margin-top:12px}
+.count small{font:600 1rem var(--body);color:var(--muted);margin-left:8px}
+.level{border-radius:24px;background:var(--night);border:2px solid var(--purple);padding:26px}
+.level .lbl{font:400 .7rem var(--hud);color:var(--mint)}
+.level h3{font-size:1.8rem;margin:10px 0 6px}
+.level p{color:var(--muted);text-align:justify;hyphens:auto}
+.level.swap{animation:swap .45s var(--ease)}
+@keyframes swap{from{transform:perspective(600px) rotateX(40deg);opacity:.3}}
+.lv-cta{margin-top:22px}
+@media (max-width:1020px){.party-box{grid-template-columns:1fr;padding:26px}}
+</style>
+
+<script>
+  import { award } from '../../lib/global';
+  type L = { max: number; label: string; name: string; text: string; price: string; type: string };
+  const sec = document.getElementById('party')!;
+  const levels: L[] = JSON.parse(sec.dataset.levels || '[]');
+  const size = document.getElementById('size') as HTMLInputElement;
+  const crowd = document.getElementById('crowd')!, lvl = document.getElementById('level')!;
+  let last = '';
+  function set() {
+    const v = +size.value;
+    document.getElementById('sizeOut')!.textContent = String(v);
+    while (crowd.children.length < v) crowd.appendChild(document.createElement('i'));
+    while (crowd.children.length > v) crowd.lastChild?.remove();
+    const L = levels.find((x) => v <= x.max) || levels[levels.length - 1];
+    const cta = document.getElementById('lvCta') as HTMLAnchorElement;
+    cta.href = `/request-for-private-events?guests=${v}&type=${L.type}`;
+    if (L.label !== last) {
+      last = L.label;
+      document.getElementById('lvLbl')!.textContent = L.label;
+      document.getElementById('lvName')!.textContent = L.name;
+      document.getElementById('lvText')!.textContent = L.text;
+      document.getElementById('lvTag')!.textContent = L.price;
+      lvl.classList.remove('swap'); void lvl.offsetWidth; lvl.classList.add('swap');
+    }
+    if (v >= 40) award('boss', 'Boss raid unlocked', 60, '👑');
+  }
+  size.addEventListener('input', set);
+  size.addEventListener('change', () => award('party', 'Party planned', 50, '🎉'));
+  set();
+</script>

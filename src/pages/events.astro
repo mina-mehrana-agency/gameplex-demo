@@ -1,0 +1,82 @@
+---
+import Base from '../layouts/Base.astro';
+import EventCard from '../components/EventCard.astro';
+import { events } from '../data/events';
+const types = [
+  { v: '', l: 'All' },
+  { v: 'tournament', l: 'Tournaments' },
+  { v: 'mafia', l: 'Mafia Night' },
+  { v: 'event', l: 'Events' },
+].filter((t) => !t.v || events.some((e) => e.type === t.v));
+---
+<Base title="Events, Tournaments and Tickets | Gameplex Thornhill" description="Buy tickets for weekly tournaments, Mafia Night and events at Gameplex in Thornhill. Pay securely on Square." current="/events">
+ <section class="page-hero">
+  <div class="wrap">
+   <span class="eyebrow">Events and tickets</span>
+   <h1>Grab a seat at <span class="glow">the table.</span></h1>
+   <p class="lead">Weekly tournaments, Mafia Night and special events. Buy your ticket on Square, pay there, and you come straight back here.</p>
+  </div>
+ </section>
+
+ <div class="paid" id="paid" hidden role="status">
+  <div class="wrap paid-in">
+   <span class="paid-ic"><svg><use href="#i-check"/></svg></span>
+   <div><b>Payment received.</b> Your ticket is booked. See you at Gameplex!</div>
+   <button type="button" class="paid-x" aria-label="Close"><svg><use href="#i-close"/></svg></button>
+  </div>
+ </div>
+
+ <section class="evs">
+  <div class="wrap">
+   {types.length > 2 && (
+    <div class="filters" role="group" aria-label="Filter events">
+     {types.map((t, i) => <button type="button" class={i === 0 ? 'on' : ''} data-f={t.v}>{t.l}</button>)}
+    </div>
+   )}
+   <ul class="ev-list" id="evList">
+    {events.map((e) => <EventCard e={e} />)}
+   </ul>
+   {events.length === 0 && <p class="none">The event list is filled in by Gameplex in the site editor.</p>}
+   <p class="how"><svg viewBox="0 0 48 48"><use href="#i-ticket"/></svg>Tickets are sold through Square. After paying you are sent back to this page.</p>
+  </div>
+ </section>
+</Base>
+
+<style>
+.paid{background:var(--mint);color:var(--ink)}
+.paid-in{display:flex;align-items:center;gap:14px;padding-block:14px;font-weight:600}
+.paid-ic{width:36px;height:36px;border-radius:50%;background:var(--ink);color:var(--mint);display:grid;place-items:center;flex:none}
+.paid-ic svg{width:20px;height:20px}
+.paid-x{margin-left:auto;background:none;border:0;cursor:pointer;color:var(--ink)}
+.paid-x svg{width:20px;height:20px}
+.evs{padding-top:16px}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px}
+.filters button{padding:10px 16px;border-radius:999px;border:2px solid var(--line-2);background:rgba(43,17,80,.6);font-weight:700;cursor:pointer;transition:background .2s,border-color .2s}
+.filters button.on{background:var(--ticket);color:var(--ink);border-color:var(--ticket)}
+.ev-list{list-style:none;margin:0;padding:0;display:grid;gap:14px}
+.none{color:var(--muted)}
+.how{display:flex;align-items:center;gap:10px;color:var(--muted);font-weight:600;margin-top:28px}
+.how svg{width:24px;height:24px;color:var(--ticket)}
+</style>
+
+<script>
+  import { torontoToday, award } from '../lib/global';
+  import { fillNextDates } from '../lib/events';
+  fillNextDates(torontoToday());
+  // Sort by next date
+  const list = document.getElementById('evList')!;
+  Array.from(list.children).sort((a, b) => +(a as HTMLElement).dataset.sort! - +(b as HTMLElement).dataset.sort!).forEach((el) => list.appendChild(el));
+  // Filter
+  const btns = Array.from(document.querySelectorAll<HTMLButtonElement>('.filters button'));
+  btns.forEach((b) => b.addEventListener('click', () => {
+    btns.forEach((x) => x.classList.toggle('on', x === b));
+    list.querySelectorAll<HTMLElement>('.ev').forEach((ev) => { ev.hidden = !!b.dataset.f && ev.dataset.type !== b.dataset.f; });
+  }));
+  // Back from Square: ?paid=1
+  if (new URLSearchParams(location.search).get('paid') === '1') {
+    const p = document.getElementById('paid')!;
+    p.hidden = false;
+    p.querySelector('.paid-x')!.addEventListener('click', () => { p.hidden = true; });
+    award('ticket', 'Ticket booked', 100, '🎟');
+  }
+</script>

@@ -1,0 +1,46 @@
+---
+import Base from '../layouts/Base.astro';
+import GalleryWall from '../components/GalleryWall.astro';
+import { photos } from '../data/gallery';
+---
+<Base title="Gallery | Gameplex Board Game Café and Arcade, Thornhill" description="Photos from Gameplex in Thornhill: board games, PC gaming, PS5, pool, karaoke, parties and food." current="/gallery">
+ <section class="page-hero">
+  <div class="wrap">
+   <span class="eyebrow">Gallery</span>
+   <h1>Walk round <span class="glow">Gameplex.</span></h1>
+   <p class="lead">Drag the wall or scroll past to walk round. Click a photo to look closer.</p>
+  </div>
+ </section>
+ <section class="gal">
+  <div class="wrap">
+   <GalleryWall photos={photos} id="wall-page" />
+   <h2 class="grid-h">All photos</h2>
+   <ul class="grid">
+    {photos.map((p, i) => (
+     <li><button type="button" class="tile" data-open={i} aria-label={`Open photo: ${p.alt}`}><img src={p.src} alt={p.alt} loading="lazy" width={p.w} height={p.h}></button></li>
+    ))}
+   </ul>
+  </div>
+ </section>
+</Base>
+
+<style>
+.gal{padding-top:10px}
+.grid-h{font-size:1.6rem;margin:90px 0 20px}
+.grid{list-style:none;margin:0;padding:0;columns:4 240px;column-gap:14px}
+.grid li{break-inside:avoid;margin-bottom:14px}
+.tile{display:block;width:100%;padding:0;border:0;background:none;cursor:zoom-in;border-radius:16px;overflow:hidden}
+.tile img{width:100%;height:auto;transition:transform .5s var(--ease-out),filter .3s}
+.tile:hover img{transform:scale(1.04);filter:brightness(1.08)}
+</style>
+
+<script>
+  // Grid tiles open the same lightbox as the wall
+  const root = document.getElementById('wall-page');
+  document.querySelectorAll<HTMLButtonElement>('[data-open]').forEach((b) => b.addEventListener('click', () => {
+    const i = +b.dataset.open!;
+    const frame = root?.querySelectorAll<HTMLButtonElement>('.frame')[i];
+    if (!frame || !root) return;
+    root.dispatchEvent(new CustomEvent('wall:open', { detail: i }));
+  }));
+</script>

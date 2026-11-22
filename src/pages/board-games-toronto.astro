@@ -1,0 +1,135 @@
+---
+import Base from '../layouts/Base.astro';
+import { boardGames } from '../data/boardGames';
+const games = [...boardGames].sort((a, b) => a.name.localeCompare(b.name));
+const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+const has = new Set(games.map((g) => (/[A-Z]/i.test(g.name[0]) ? g.name[0].toUpperCase() : '#')));
+---
+<Base title="Board Game Library | Gameplex Board Game Café, Thornhill" description="Browse the Gameplex board game library: classic, strategy, family and party games to play at our board game café on Yonge Street, Thornhill." current="/board-games-toronto">
+ <section class="page-hero">
+  <div class="wrap">
+   <span class="eyebrow">Board game library</span>
+   <h1>Find your next <span class="glow">game night.</span></h1>
+   <p class="lead">Hundreds of classic, strategy, family and party games. Search the shelf, tap a box to read about it, or let us pick one for you.</p>
+  </div>
+ </section>
+
+ <section class="lib">
+  <div class="wrap">
+   <div class="toolbar">
+    <label class="search">
+     <svg><use href="#i-search"/></svg>
+     <span class="sr">Search board games</span>
+     <input type="search" id="q" placeholder="Search games" autocomplete="off">
+    </label>
+    <button class="btn purple" type="button" id="pick" data-burst><svg viewBox="0 0 48 48"><use href="#i-dice"/></svg>Pick one for me</button>
+    <p class="count" aria-live="polite"><b id="shown">{games.length}</b> of {games.length} games</p>
+   </div>
+   <nav class="az" aria-label="Jump to letter">
+    <button type="button" class="on" data-l="">All</button>
+    {letters.map((l) => <button type="button" data-l={l} disabled={!has.has(l)}>{l}</button>)}
+   </nav>
+
+   <ul class="shelf" id="shelf">
+    {games.map((g, i) => (
+     <li class="box" data-name={g.name.toLowerCase()} data-l={g.name[0].toUpperCase()}>
+      <button class="box-in" type="button" aria-expanded="false" aria-label={`${g.name}: show description`}>
+       <span class="lid">
+        <img src={g.image} alt={g.name} loading={i < 8 ? 'eager' : 'lazy'} width="640" height="480">
+        <span class="lid-name">{g.name}</span>
+       </span>
+       <span class="inside">
+        <b>{g.name}</b>
+        <span class="desc">{g.description}</span>
+        {g.credit && <small>{g.credit}</small>}
+       </span>
+      </button>
+     </li>
+    ))}
+   </ul>
+   <p class="empty" id="empty" hidden>No game matches that search.</p>
+  </div>
+ </section>
+</Base>
+
+<style>
+.lib{padding-top:20px}
+.toolbar{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+.search{flex:1 1 320px;display:flex;align-items:center;gap:10px;padding:0 16px;border-radius:14px;background:var(--grape);border:2px solid var(--line-2);transition:border-color .2s}
+.search:focus-within{border-color:var(--ticket)}
+.search svg{width:20px;height:20px;color:var(--lilac);flex:none}
+.search input{flex:1;border:0;background:none;padding:14px 0;outline:none;font-size:1.05rem}
+.search input::placeholder{color:var(--muted)}
+.count{margin:0 0 0 auto;color:var(--muted);font-weight:600}
+.count b{color:var(--ticket)}
+.az{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:30px}
+.az button{min-width:36px;height:36px;padding:0 10px;border-radius:10px;border:1px solid var(--line);background:rgba(43,17,80,.6);font:400 .72rem var(--hud);cursor:pointer}
+.az button:disabled{opacity:.25;cursor:default}
+.az button.on{background:var(--ticket);color:var(--ink);border-color:var(--ticket)}
+.shelf{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px;perspective:1200px}
+.box-in{position:relative;display:block;width:100%;aspect-ratio:4/5;padding:0;border:0;background:none;cursor:pointer;transform-style:preserve-3d;transition:transform .6s var(--ease)}
+.box-in:hover{transform:translateY(-6px) rotateX(4deg)}
+.box-in.open{transform:rotateY(180deg)}
+.lid,.inside{position:absolute;inset:0;border-radius:18px;overflow:hidden;backface-visibility:hidden;text-align:left}
+.lid{background:var(--grape);border:2px solid var(--line-2);box-shadow:0 18px 30px rgba(0,0,0,.35),inset 0 0 0 4px rgba(255,255,255,.05)}
+.lid img{width:100%;height:100%;object-fit:cover}
+.lid::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 45%,rgba(19,7,36,.92))}
+.lid-name{position:absolute;left:14px;right:14px;bottom:12px;z-index:1;font:800 1.3rem/1.05 var(--display);color:#fff}
+.inside{transform:rotateY(180deg);background:linear-gradient(160deg,#F6F0FF,#E7DBFF);color:var(--ink);padding:18px;display:flex;flex-direction:column;gap:10px;border:2px solid #fff}
+.inside b{font:800 1.3rem/1.05 var(--display)}
+.inside .desc{font-size:.93rem;line-height:1.5;overflow:auto;text-align:justify;hyphens:auto}
+.inside small{margin-top:auto;font-size:.68rem;color:#6B5A8E}
+.box.hit .lid{border-color:var(--ticket);box-shadow:0 0 0 4px rgba(255,212,71,.4),0 20px 40px rgba(0,0,0,.4)}
+.box.hit{animation:hit .8s var(--ease)}
+@keyframes hit{30%{transform:scale(1.06) rotate(-2deg)}}
+.empty{color:var(--muted);font-weight:600;margin-top:20px}
+@media (max-width:640px){
+  .shelf{grid-template-columns:repeat(2,1fr);gap:12px}
+  .lid-name,.inside b{font-size:1.05rem}
+  .inside{padding:12px}
+  .inside .desc{font-size:.82rem}
+  .count{margin-left:0}
+}
+</style>
+
+<script>
+  import { award } from '../lib/global';
+  const boxes = Array.from(document.querySelectorAll<HTMLElement>('.box'));
+  const q = document.getElementById('q') as HTMLInputElement;
+  const shown = document.getElementById('shown')!, empty = document.getElementById('empty')!;
+  const az = Array.from(document.querySelectorAll<HTMLButtonElement>('.az button'));
+  let letter = '';
+  function filter() {
+    const t = q.value.trim().toLowerCase();
+    let n = 0;
+    boxes.forEach((b) => {
+      const ok = (!t || b.dataset.name!.includes(t)) && (!letter || b.dataset.l === letter);
+      b.hidden = !ok; if (ok) n++;
+    });
+    shown.textContent = String(n);
+    empty.hidden = n > 0;
+  }
+  q.addEventListener('input', filter);
+  az.forEach((b) => b.addEventListener('click', () => {
+    letter = b.dataset.l || '';
+    az.forEach((x) => x.classList.toggle('on', x === b));
+    filter();
+  }));
+  boxes.forEach((b) => {
+    const btn = b.querySelector<HTMLButtonElement>('.box-in')!;
+    btn.addEventListener('click', () => {
+      const o = btn.classList.toggle('open');
+      btn.setAttribute('aria-expanded', String(o));
+      if (o) award('shelf', 'Read the back of the box', 15, '🎲');
+    });
+  });
+  document.getElementById('pick')!.addEventListener('click', () => {
+    const vis = boxes.filter((b) => !b.hidden);
+    if (!vis.length) return;
+    boxes.forEach((b) => b.classList.remove('hit'));
+    const g = vis[Math.floor(Math.random() * vis.length)];
+    void g.offsetWidth; g.classList.add('hit');
+    g.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    award('pick', 'Let the shelf decide', 25, '🎯');
+  });
+</script>

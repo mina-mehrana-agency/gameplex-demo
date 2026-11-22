@@ -1,0 +1,150 @@
+---
+import { promotions, kindLabel } from '../../data/promotions';
+import { dayNames, dayShort, weekOrder } from '../../data/site';
+const active = promotions.filter((p) => p.active);
+const icon: Record<string, string> = { entry: 'ticket', food: 'food', drink: 'drink', event: 'mask' };
+const byDay = weekOrder.map((d) => ({
+  day: d,
+  items: active.filter((p) => p.days.includes(d)),
+}));
+const ticker = weekOrder.map((d) => {
+  const items = active.filter((p) => p.days.includes(d));
+  return { day: d, text: items.map((p) => `${p.short} ${p.price}`).join(' · ') };
+});
+---
+<div class="marquee" aria-label="Deals every night">
+ <div class="tonight-pin"><span class="dot" aria-hidden="true"></span><span id="pin">Tonight</span></div>
+ <div class="track" aria-hidden="true">
+  {[0, 1].map(() => (
+   <ul>
+    {ticker.map((t) => <li data-day={t.day}><b>{dayShort[t.day]}</b> {t.text}</li>)}
+   </ul>
+  ))}
+ </div>
+</div>
+
+<section class="deals" id="deals">
+ <div class="wrap">
+  <div class="sec-head rv">
+   <div>
+    <span class="eyebrow">Daily and weekly deals</span>
+    <h2>Something on special every night</h2>
+   </div>
+   <p class="lead">Entry deals, food and drink specials for each day. Today is selected for you.</p>
+  </div>
+
+  <div class="days rv" role="tablist" aria-label="Day of the week">
+   {byDay.map((b, i) => (
+    <button role="tab" type="button" class="day-tab" id={`dt-${b.day}`} aria-controls={`dp-${b.day}`} aria-selected={i === 0 ? 'true' : 'false'} data-day={b.day} data-d={b.day} tabindex={i === 0 ? 0 : -1}>
+     <span class="d-short">{dayShort[b.day]}</span>
+     <span class="d-count">{b.items.length} {b.items.length === 1 ? 'deal' : 'deals'}</span>
+     <span class="d-today">TODAY</span>
+    </button>
+   ))}
+  </div>
+
+  {byDay.map((b, i) => (
+   <div class="day-panel" role="tabpanel" id={`dp-${b.day}`} aria-labelledby={`dt-${b.day}`} data-d={b.day} hidden={i !== 0}>
+    <h3 class="sr">{dayNames[b.day]} deals</h3>
+    <ul class="deal-grid">
+     {b.items.map((p) => (
+      <li class={`deal k-${p.kind}`}>
+       <span class="deal-ic"><svg viewBox="0 0 48 48"><use href={`#i-${icon[p.kind]}`}/></svg></span>
+       <span class="deal-kind">{kindLabel[p.kind]}</span>
+       <h4>{p.title}</h4>
+       {p.note && <p>{p.note}</p>}
+       <div class="deal-foot">
+        <span class={`tag ${p.kind === 'food' || p.kind === 'drink' ? 'mint' : ''}`}>{p.price}{p.was && <s>{p.was}</s>}</span>
+        {p.link && <a href={p.link} class="deal-link">{p.link === '/events' ? 'Book' : p.link === '/food-menu' ? 'Menu' : 'More'} <svg><use href="#i-arrow"/></svg></a>}
+       </div>
+      </li>
+     ))}
+    </ul>
+   </div>
+  ))}
+ </div>
+</section>
+
+<style>
+.marquee{border-block:2px solid var(--purple);background:linear-gradient(90deg,var(--grape),#24103F);overflow:hidden;position:relative;z-index:3;display:flex;align-items:stretch}
+.tonight-pin{flex:none;display:flex;align-items:center;gap:10px;padding:0 18px;background:var(--ticket);color:var(--ink);font-weight:800;z-index:2;box-shadow:12px 0 24px rgba(19,7,36,.9);white-space:nowrap}
+.tonight-pin .dot{width:10px;height:10px;border-radius:50%;background:#E3264F;animation:blink 1.2s steps(2) infinite}
+@keyframes blink{50%{opacity:.2}}
+.track{display:flex;white-space:nowrap;animation:scroll 48s linear infinite;padding:15px 0}
+.marquee:hover .track{animation-play-state:paused}
+.track ul{display:flex;list-style:none;margin:0;padding:0}
+.track li{padding:0 24px;font:700 1rem var(--display);display:flex;align-items:center;gap:10px}
+.track li::after{content:"";width:8px;height:8px;border-radius:2px;background:var(--purple-2);transform:rotate(45deg);margin-left:24px}
+.track li b{color:var(--ticket);font-family:var(--hud);font-weight:400;font-size:.75rem}
+.track li.today{color:var(--mint)}
+@keyframes scroll{to{transform:translateX(-50%)}}
+
+.deals{background:radial-gradient(800px 500px at 90% 0%,rgba(123,47,214,.2),transparent 70%)}
+.days{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;margin-bottom:18px}
+.day-tab{position:relative;display:grid;gap:6px;justify-items:start;padding:14px 14px 12px;border-radius:16px;border:2px solid var(--line);background:linear-gradient(160deg,var(--grape-2),var(--grape));cursor:pointer;text-align:left;transition:transform .25s var(--ease),border-color .2s,box-shadow .25s}
+.day-tab:hover{transform:translateY(-3px);border-color:var(--line-2)}
+.d-short{font:800 1.3rem/1 var(--display)}
+.d-count{font-size:.8rem;color:var(--muted);font-weight:600}
+.d-today{display:none;position:absolute;top:-9px;right:10px;font:400 .56rem/1 var(--hud);background:var(--coral);color:#fff;padding:4px 6px;border-radius:5px}
+.day-tab.today .d-today{display:block}
+.day-tab[aria-selected=true]{border-color:var(--ticket);box-shadow:0 0 0 3px rgba(255,212,71,.2),0 14px 30px rgba(123,47,214,.35);transform:translateY(-4px)}
+.day-tab[aria-selected=true] .d-short{color:var(--ticket)}
+
+.day-panel{animation:panelIn .4s var(--ease-out)}
+@keyframes panelIn{from{opacity:0;transform:translateY(10px)}}
+.no-js .day-panel[hidden]{display:block}
+.deal-grid{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.deal{position:relative;border-radius:22px;padding:20px;background:var(--night-2);border:1px solid var(--line);display:flex;flex-direction:column;gap:4px;overflow:hidden;transition:transform .3s var(--ease)}
+.deal:hover{transform:translateY(-4px) rotate(-.4deg)}
+.deal::after{content:"";position:absolute;right:-40px;top:-40px;width:120px;height:120px;border-radius:50%;background:var(--glow,rgba(123,47,214,.25));filter:blur(10px)}
+.k-entry{--glow:rgba(255,212,71,.18)}.k-food{--glow:rgba(79,240,180,.16)}.k-drink{--glow:rgba(92,200,255,.16)}.k-event{--glow:rgba(255,107,139,.22)}
+.deal-ic{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:rgba(197,155,255,.12);color:var(--lilac);margin-bottom:8px}
+.deal-ic svg{width:26px;height:26px}
+.k-entry .deal-ic{color:var(--ticket)}.k-food .deal-ic{color:var(--mint)}.k-drink .deal-ic{color:var(--sky)}.k-event .deal-ic{color:var(--coral)}
+.deal-kind{font:400 .64rem/1 var(--hud);color:var(--muted);letter-spacing:.05em;text-transform:uppercase}
+.deal h4{font-size:1.3rem;margin:4px 0 2px}
+.deal p{color:var(--muted);font-size:.93rem;line-height:1.45;margin:0 0 8px}
+.deal-foot{margin-top:auto;padding-top:10px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.deal-link{display:inline-flex;align-items:center;gap:6px;font-weight:700;color:var(--ticket);text-decoration:none}
+.deal-link svg{width:16px;height:16px;transition:transform .2s}
+.deal-link:hover svg{transform:translateX(3px)}
+
+@media (max-width:760px){
+  .days{grid-template-columns:repeat(7,minmax(74px,1fr));overflow-x:auto;padding:12px 2px 6px;scroll-snap-type:x mandatory;margin-inline:-16px;padding-inline:16px}
+  .day-tab{scroll-snap-align:start;padding:12px 10px 10px}
+  .d-short{font-size:1.1rem}
+}
+@media (prefers-reduced-motion:reduce){.track{animation:none}}
+</style>
+
+<script>
+  import { torontoToday } from '../../lib/global';
+  import { promotions } from '../../data/promotions';
+  const today = torontoToday();
+  const tonight = promotions.filter((p) => p.active && p.days.includes(today));
+  const head = tonight.find((p) => p.kind === 'event') || tonight.find((p) => p.kind === 'entry') || tonight[0];
+  const pin = document.getElementById('pin');
+  if (pin && head) pin.textContent = `Tonight: ${head.short} ${head.price}`;
+
+  const tabs = Array.from(document.querySelectorAll<HTMLButtonElement>('.day-tab'));
+  const panels = Array.from(document.querySelectorAll<HTMLElement>('.day-panel'));
+  function select(d: string, focus = false) {
+    tabs.forEach((t) => {
+      const on = t.dataset.d === d;
+      t.setAttribute('aria-selected', String(on));
+      t.tabIndex = on ? 0 : -1;
+      if (on && focus) t.focus();
+    });
+    panels.forEach((p) => { p.hidden = p.dataset.d !== d; });
+  }
+  tabs.forEach((t, i) => {
+    t.addEventListener('click', () => select(t.dataset.d!));
+    t.addEventListener('keydown', (e) => {
+      const m = ({ ArrowRight: 1, ArrowLeft: -1 } as Record<string, number>)[e.key];
+      if (!m) return;
+      e.preventDefault();
+      select(tabs[(i + m + tabs.length) % tabs.length].dataset.d!, true);
+    });
+  });
+  select(String(today));
+</script>

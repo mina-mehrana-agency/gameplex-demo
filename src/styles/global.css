@@ -1,0 +1,91 @@
+/* Fonts: the system font stack (Segoe UI on Windows, San Francisco on Apple, Roboto on Android),
+   the look Mina chose from the client's prototype. Nothing to download. */
+:root{
+  --night:#130724;--night-2:#1A0B31;--grape:#2B1150;--grape-2:#3A1A6B;--purple:#7B2FD6;--purple-2:#9D5CFF;--lilac:#C59BFF;
+  --ticket:#FFD447;--ticket-d:#B88E00;--mint:#4FF0B4;--coral:#FF6B8B;--sky:#5CC8FF;--paper:#F6F0FF;--ink:#1B0D33;
+  --text:#F3ECFF;--muted:#B7A6DA;--line:rgba(197,155,255,.18);--line-2:rgba(197,155,255,.32);
+  --display:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;--body:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;--hud:ui-monospace,"Cascadia Mono","Segoe UI Mono",Consolas,"SF Mono",Menlo,monospace;
+  --wrap:1268px;--ease:cubic-bezier(.2,.9,.25,1.15);--ease-out:cubic-bezier(.16,1,.3,1);
+  --head-h:76px;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;scroll-padding-top:calc(var(--head-h) + 16px)}
+body{margin:0;background:var(--night);color:var(--text);font:400 1.0625rem/1.6 var(--body);overflow-x:hidden;-webkit-font-smoothing:antialiased}
+img{max-width:100%;display:block;height:auto}
+a{color:var(--lilac)}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--ticket);outline-offset:3px;border-radius:6px}
+.wrap{max-width:var(--wrap);margin:0 auto;padding:0 24px}
+h1,h2,h3,h4{font-family:var(--display);letter-spacing:-.02em;line-height:1.02;margin:0 0 .45em;font-weight:800}
+h2{font-size:clamp(2rem,3.6vw,3rem)}
+h3{font-size:1.35rem;letter-spacing:-.01em}
+p{margin:0 0 1em}
+.lead{font-size:1.12rem;color:#E2D6FF;max-width:60ch}
+.body-text p,.lead.just{text-align:justify;text-justify:inter-word;hyphens:auto}
+section{position:relative;padding:88px 0}
+[hidden]{display:none!important}
+.sr{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font:400 .72rem/1 var(--hud);letter-spacing:.06em;color:var(--mint);margin-bottom:14px;text-transform:uppercase}
+.eyebrow::before{content:"";width:8px;height:8px;background:currentColor;border-radius:2px;transform:rotate(45deg)}
+.sec-head{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap;margin-bottom:36px}
+.sec-head .lead{margin:0}
+
+/* Arcade buttons: they press down */
+.btn{--c:var(--ticket);--t:var(--ink);--d:var(--ticket-d);position:relative;display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:14px 22px;border-radius:14px;border:0;cursor:pointer;
+  background:var(--c);color:var(--t);font:800 1rem/1.1 var(--body);text-decoration:none;box-shadow:0 5px 0 var(--d),0 12px 22px rgba(0,0,0,.32);
+  transition:transform .12s ease,box-shadow .12s ease,filter .2s;white-space:nowrap}
+.btn:hover{filter:brightness(1.07);transform:translateY(-2px);box-shadow:0 7px 0 var(--d),0 16px 26px rgba(0,0,0,.38)}
+.btn:active{transform:translateY(4px);box-shadow:0 1px 0 var(--d),0 5px 10px rgba(0,0,0,.3)}
+.btn.purple{--c:var(--purple);--t:#fff;--d:#4B1491}
+.btn.mint{--c:var(--mint);--t:var(--ink);--d:#1F9E6E}
+.btn.coral{--c:var(--coral);--t:#fff;--d:#B3365A}
+.btn.ghost{--c:transparent;--t:#fff;--d:transparent;box-shadow:inset 0 0 0 2px var(--line-2)}
+.btn.ghost:hover{background:rgba(197,155,255,.1);box-shadow:inset 0 0 0 2px var(--lilac)}
+.btn.small{padding:9px 15px;border-radius:11px;font-size:.92rem;box-shadow:0 4px 0 var(--d)}
+.btn.small:active{transform:translateY(3px);box-shadow:0 1px 0 var(--d)}
+.btn.ghost.small,.btn.ghost.small:active{box-shadow:inset 0 0 0 2px var(--line-2)}
+.btn[aria-disabled=true],.btn:disabled{filter:grayscale(1) brightness(.7);cursor:not-allowed;transform:none}
+.btn svg{width:18px;height:18px;flex:none}
+
+/* Ticket tag = price everywhere */
+.tag{display:inline-block;background:var(--ticket);color:var(--ink);font:800 1.05rem/1 var(--display);padding:9px 16px;white-space:nowrap;
+  -webkit-mask:radial-gradient(circle at 0 50%,#0000 6px,#000 6.5px) left/51% 100% no-repeat,radial-gradient(circle at 100% 50%,#0000 6px,#000 6.5px) right/51% 100% no-repeat;
+  mask:radial-gradient(circle at 0 50%,#0000 6px,#000 6.5px) left/51% 100% no-repeat,radial-gradient(circle at 100% 50%,#0000 6px,#000 6.5px) right/51% 100% no-repeat}
+.tag s{opacity:.55;font-weight:600;margin-left:6px;font-size:.78em}
+.tag.mint{background:var(--mint)}.tag.coral{background:var(--coral);color:#fff}.tag.lilac{background:var(--lilac)}
+
+/* Status chips */
+.chip{display:inline-flex;align-items:center;gap:7px;padding:6px 11px;border-radius:999px;font-weight:700;font-size:.85rem;line-height:1;border:1px solid var(--line-2);background:rgba(43,17,80,.6)}
+.chip::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor}
+.chip.on{color:var(--mint);border-color:rgba(79,240,180,.4)}
+.chip.off{color:var(--coral);border-color:rgba(255,107,139,.45)}
+.chip.limited{color:var(--ticket);border-color:rgba(255,212,71,.45)}
+.chip.deal{color:var(--ticket);border-color:rgba(255,212,71,.45)}
+.chip.deal::before{border-radius:2px;transform:rotate(45deg)}
+
+/* Cards */
+.card-box{border-radius:24px;background:linear-gradient(170deg,var(--grape-2),var(--grape));border:1px solid var(--line);padding:24px}
+
+/* Reveal */
+.rv{opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s var(--ease-out)}
+.rv.in{opacity:1;transform:none}
+.no-js .rv{opacity:1;transform:none}
+
+/* Page hero for inner pages */
+.page-hero{padding:calc(var(--head-h) + 64px) 0 40px;background:radial-gradient(800px 420px at 85% 0%,rgba(123,47,214,.4),transparent 70%),radial-gradient(600px 400px at 0% 100%,rgba(255,107,139,.1),transparent 70%)}
+.page-hero h1{font-size:clamp(2.6rem,6vw,4.6rem);font-stretch:88%;line-height:.95;margin-bottom:16px}
+.page-hero h1 .glow{color:var(--ticket);text-shadow:0 0 28px rgba(255,212,71,.3)}
+
+/* Confetti bits */
+.bit{position:fixed;width:9px;height:9px;border-radius:2px;pointer-events:none;z-index:300;animation:burst .9s cubic-bezier(.15,.7,.3,1) forwards}
+@keyframes burst{to{transform:translate(var(--x),var(--y)) rotate(var(--rot));opacity:0}}
+
+@media (max-width:640px){
+  section{padding:64px 0}
+  .wrap{padding:0 16px}
+  .card-box{padding:20px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+  html{scroll-behavior:auto}
+}

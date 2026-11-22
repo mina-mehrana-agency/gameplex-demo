@@ -1,0 +1,202 @@
+---
+import Base from '../layouts/Base.astro';
+import { partyLevels, packages, eventTypes } from '../data/party';
+import { site } from '../data/site';
+---
+<Base title="Request a Party Quote | Gameplex Parties and Private Events, Thornhill" description="Plan a birthday, team night or private event at Gameplex in Thornhill. Tell us your group size and date and we'll send you a quote. Parties up to 80 guests." current="/request-for-private-events">
+ <section class="page-hero quote-hero">
+  <div class="wrap qh-grid">
+   <div>
+    <span class="eyebrow">Parties and private events</span>
+    <h1>Request <span class="glow">an event.</span></h1>
+    <p class="lead">Planning a private celebration, birthday, or company gathering? Submit your event request, and a member of our Gameplex team will get in touch with you promptly to discuss details and confirm your booking.</p>
+   </div>
+   <img class="qh-img" src="/img/party-group.webp" alt="A big group photo at a Gameplex event" width="1100" height="825">
+  </div>
+ </section>
+
+ <section class="quote">
+  <div class="wrap quote-grid">
+   <aside class="levels">
+    {partyLevels.map((l) => (
+     <div class="lvl" data-type={l.type}>
+      <span class="lbl">{l.label}</span>
+      <h2>{l.name}</h2>
+      <p>{l.text}</p>
+      <span class="tag">{l.price}</span>
+      {l.type === 'party' && (
+       <ul class="pkgs">
+        {packages.map((p) => <li><b>{p.name}</b><span class="pk-price">{p.price}</span><span class="pk-inc">{p.includes}</span></li>)}
+       </ul>
+      )}
+     </div>
+    ))}
+    <p class="call">Rather talk it through? Call or text <a href={site.phoneHref}>{site.phone}</a>.</p>
+   </aside>
+
+   <div class="form-card">
+    <form id="quoteForm" novalidate>
+     <h2 class="form-h">Your event</h2>
+     <fieldset class="types">
+      <legend>What type of event are you planning?</legend>
+      <div class="type-chips">
+       {eventTypes.map((t) => <label class="tchip"><input type="checkbox" name="type" value={t}><span>{t}</span></label>)}
+      </div>
+      <span class="err" data-for="type">Please pick at least one.</span>
+     </fieldset>
+     <div class="guests">
+      <label for="guests">Number of guests</label>
+      <div class="g-row">
+       <button type="button" class="g-btn" data-g="-1" aria-label="Fewer guests">−</button>
+       <input id="guests" name="guests" type="number" min="1" max="80" value="10" inputmode="numeric">
+       <button type="button" class="g-btn" data-g="1" aria-label="More guests">+</button>
+       <span class="g-level" id="gLevel"></span>
+      </div>
+     </div>
+     <div class="row2">
+      <div class="field">
+       <label for="date">Event date</label>
+       <input id="date" name="date" type="date">
+      </div>
+      <div class="field">
+       <label for="time">Event time</label>
+       <input id="time" name="time" type="time">
+      </div>
+     </div>
+     <h2 class="form-h">Your contact details</h2>
+     <div class="field">
+      <label for="name">Full name</label>
+      <input id="name" name="name" type="text" autocomplete="name" required>
+      <span class="err" data-for="name">Please enter your name.</span>
+     </div>
+     <div class="row2">
+      <div class="field">
+       <label for="email">Email</label>
+       <input id="email" name="email" type="email" autocomplete="email" required>
+       <span class="err">Please enter a valid email address.</span>
+      </div>
+      <div class="field">
+       <label for="phone">Phone number</label>
+       <input id="phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" required>
+       <span class="err">Please enter a 10-digit phone number.</span>
+      </div>
+     </div>
+     <div class="field">
+      <label for="msg">Message <span class="opt">(optional)</span></label>
+      <textarea id="msg" name="message" rows="4"></textarea>
+     </div>
+     <button class="btn" type="submit" data-burst>Submit <svg><use href="#i-arrow"/></svg></button>
+    </form>
+    <div class="done" id="done" hidden aria-live="polite">
+     <span class="done-ic"><svg><use href="#i-check"/></svg></span>
+     <h2>Request sent</h2>
+     <p>A member of our Gameplex team will get in touch with you promptly.</p>
+     <a class="btn ghost" href="/">Back to the home page</a>
+    </div>
+   </div>
+  </div>
+ </section>
+</Base>
+
+<style>
+.quote-hero{padding-bottom:32px}
+.qh-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center}
+.qh-img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:28px;border:3px solid var(--line-2);transform:rotate(1.5deg);box-shadow:0 30px 60px rgba(0,0,0,.45)}
+.quote{padding-top:16px}
+.quote-grid{display:grid;grid-template-columns:.85fr 1.15fr;gap:32px;align-items:start}
+.levels{display:grid;gap:14px}
+.lvl{border-radius:22px;padding:20px 22px;background:linear-gradient(160deg,var(--grape-2),var(--grape));border:2px solid var(--line);transition:border-color .3s,transform .35s var(--ease),box-shadow .3s}
+.lvl.on{border-color:var(--ticket);transform:translateX(6px);box-shadow:0 16px 34px rgba(123,47,214,.35)}
+.lvl .lbl{font:400 .66rem var(--hud);color:var(--mint)}
+.lvl h2{font-size:1.4rem;margin:8px 0 6px}
+.lvl p{color:var(--muted);font-size:.95rem;text-align:justify;hyphens:auto}
+.pkgs{list-style:none;margin:16px 0 0;padding:0;display:grid;gap:8px}
+.pkgs li{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:12px 14px;border-radius:14px;background:rgba(19,7,36,.5);border:1px solid var(--line)}
+.pkgs b{font-weight:800}
+.pk-price{font:800 1rem var(--display);color:var(--ticket)}
+.pk-inc{grid-column:1/-1;color:var(--muted);font-size:.88rem}
+.call{color:var(--muted);font-weight:600;margin:6px 0 0}
+.call a{color:var(--ticket)}
+.form-card{border-radius:28px;background:var(--paper);color:var(--ink);padding:32px;position:sticky;top:calc(var(--head-h) + 20px)}
+.form-h{font-size:1.35rem;margin:0 0 16px;color:var(--ink)}
+.form-h:not(:first-child){margin-top:26px}
+.types{border:0;padding:0;margin:0 0 18px}
+.types legend{font-weight:700;font-size:.95rem;margin-bottom:10px;padding:0}
+.type-chips{display:flex;flex-wrap:wrap;gap:8px}
+.tchip{position:relative;cursor:pointer}
+.tchip input{position:absolute;opacity:0;pointer-events:none}
+.tchip span{display:inline-block;padding:9px 14px;border-radius:999px;border:2px solid #DCCDF7;background:#fff;font-weight:700;font-size:.9rem;transition:background .2s,border-color .2s,color .2s,transform .2s var(--ease)}
+.tchip input:checked+span{background:var(--purple);border-color:var(--purple);color:#fff;transform:translateY(-2px)}
+.tchip input:focus-visible+span{outline:3px solid var(--ticket);outline-offset:2px}
+.types.bad .err{display:block}
+.field{display:grid;gap:6px;margin-bottom:16px}
+.field label,.guests label{font-weight:700;font-size:.95rem}
+.opt{font-weight:500;color:#6B5A8E}
+.field input,.field textarea,.guests input{width:100%;padding:13px 14px;border-radius:12px;border:2px solid #DCCDF7;background:#fff;color:var(--ink);font-size:1rem;outline:none;transition:border-color .2s,box-shadow .2s}
+.field input:focus,.field textarea:focus,.guests input:focus{border-color:var(--purple);box-shadow:0 0 0 4px rgba(123,47,214,.15)}
+.field.bad input{border-color:#D6334F}
+.err{display:none;color:#C2243F;font-size:.86rem;font-weight:600;margin-top:6px}
+.field.bad .err{display:block}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.guests{display:grid;gap:8px;margin-bottom:16px}
+.g-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.guests input{width:110px;text-align:center;font:800 1.5rem var(--display);padding:8px}
+.g-btn{width:46px;height:46px;border-radius:12px;border:0;background:var(--purple);color:#fff;font:800 1.4rem var(--display);cursor:pointer;box-shadow:0 4px 0 #4B1491}
+.g-btn:active{transform:translateY(3px);box-shadow:0 1px 0 #4B1491}
+.g-level{font:400 .66rem var(--hud);color:var(--purple);margin-left:6px}
+.form-card .btn{margin-top:8px}
+.done{text-align:center;padding:30px 10px}
+.done-ic{width:72px;height:72px;border-radius:50%;background:var(--mint);display:grid;place-items:center;margin:0 auto 18px}
+.done-ic svg{width:36px;height:36px;color:var(--ink)}
+.done h2{color:var(--ink)}
+.done .btn.ghost{--t:var(--ink);box-shadow:inset 0 0 0 2px #C9B6F0}
+@media (max-width:1020px){.quote-grid,.qh-grid{grid-template-columns:1fr}.form-card{position:static}.quote-grid .form-card{order:-1}}
+@media (max-width:640px){.form-card{padding:22px}.row2{grid-template-columns:1fr}}
+</style>
+
+<script>
+  import { award } from '../lib/global';
+  // Local preview only: at staging this form becomes the kit's LeadForm (Turnstile + Patrick Lead Magnets).
+  const form = document.getElementById('quoteForm') as HTMLFormElement;
+  const guests = document.getElementById('guests') as HTMLInputElement;
+  const lvls = Array.from(document.querySelectorAll<HTMLElement>('.lvl'));
+  const params = new URLSearchParams(location.search);
+  const g = parseInt(params.get('guests') || '', 10);
+  if (g >= 1 && g <= 80) guests.value = String(g);
+  function level() {
+    const v = Math.max(1, Math.min(80, parseInt(guests.value, 10) || 1));
+    const k = v <= 6 ? 'vip' : v <= 10 ? 'party' : 'private';
+    lvls.forEach((l) => l.classList.toggle('on', l.dataset.type === k));
+    document.getElementById('gLevel')!.textContent = k === 'vip' ? 'LEVEL 1: CREW' : k === 'party' ? 'LEVEL 2: SQUAD' : 'LEVEL 3: BOSS RAID';
+  }
+  guests.addEventListener('input', level);
+  document.querySelectorAll<HTMLButtonElement>('.g-btn').forEach((b) => b.addEventListener('click', () => {
+    guests.value = String(Math.max(1, Math.min(80, (parseInt(guests.value, 10) || 1) + +b.dataset.g!)));
+    level();
+  }));
+  level();
+
+  const checks: Record<string, (v: string) => boolean> = {
+    name: (v) => v.trim().length > 1,
+    email: (v) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim()),
+    phone: (v) => v.replace(/\D/g, '').replace(/^1(?=\d{10}$)/, '').length === 10,
+  };
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    let ok = true;
+    const types = form.querySelectorAll<HTMLInputElement>('input[name=type]:checked');
+    const fs = form.querySelector('.types')!;
+    fs.classList.toggle('bad', types.length === 0);
+    if (!types.length) ok = false;
+    for (const [k, fn] of Object.entries(checks)) {
+      const el = form.elements.namedItem(k) as HTMLInputElement;
+      const good = fn(el.value);
+      el.closest('.field')!.classList.toggle('bad', !good);
+      if (!good && ok) { el.focus(); ok = false; }
+    }
+    if (!ok) return;
+    form.hidden = true;
+    document.getElementById('done')!.hidden = false;
+    award('quote', 'Event request sent', 75, '🎉');
+  });
+</script>

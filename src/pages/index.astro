@@ -1,0 +1,41 @@
+---
+import Base from '../layouts/Base.astro';
+import Hero from '../components/home/Hero.astro';
+import WeekDeals from '../components/home/WeekDeals.astro';
+import Products from '../components/home/Products.astro';
+import NightPath from '../components/home/NightPath.astro';
+import EntryOptions from '../components/home/EntryOptions.astro';
+import MafiaGame from '../components/home/MafiaGame.astro';
+import EventsTeaser from '../components/home/EventsTeaser.astro';
+import PartyLevel from '../components/home/PartyLevel.astro';
+import GalleryWall from '../components/GalleryWall.astro';
+import Visit from '../components/home/Visit.astro';
+import { photos } from '../data/gallery';
+---
+<Base title="Gameplex | Board Game Café, Arcade and Party Venue in Thornhill" description="Gameplex in Thornhill: hundreds of board games, pool, ping pong, darts, arcade, PS5, gaming PCs, karaoke and Mafia nights. $30 unlimited pass. Parties and corporate events." current="/">
+ <Hero />
+ <WeekDeals />
+ <Products />
+ <NightPath />
+ <EntryOptions />
+ <MafiaGame />
+ <EventsTeaser />
+ <PartyLevel />
+ <section class="gal-home" id="gallery">
+  <div class="wrap">
+   <div class="sec-head rv">
+    <div>
+     <span class="eyebrow">Gallery</span>
+     <h2>Walk round Gameplex</h2>
+    </div>
+    <a class="btn ghost" href="/gallery">Full gallery <svg><use href="#i-arrow"/></svg></a>
+   </div>
+   <GalleryWall photos={photos.slice(0, 12)} id="wall-home" />
+  </div>
+ </section>
+ <Visit />
+</Base>
+
+<style>
+.gal-home{padding-bottom:110px}
+</style>

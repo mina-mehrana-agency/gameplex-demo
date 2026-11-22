@@ -1,0 +1,72 @@
+---
+import { entryOptions } from '../../data/entry';
+---
+<section class="entry" id="entry">
+ <div class="wrap">
+  <div class="sec-head rv">
+   <div>
+    <span class="eyebrow">Pick your way in</span>
+    <h2>Three ways to press start</h2>
+   </div>
+   <p class="lead">Walk in any night, buy ahead online, or take the VIP room and play everything.</p>
+  </div>
+  <ul class="passes">
+   {entryOptions.map((o, i) => (
+    <li class={`pass rv ${o.featured ? 'featured' : ''}`} style={`transition-delay:${i * 80}ms`}>
+     <div class="pass-top">
+      <span class="pass-ic"><svg viewBox="0 0 48 48"><use href={`#i-${o.icon}`}/></svg></span>
+      <span class="pass-no">0{i + 1}</span>
+     </div>
+     <h3>{o.name}</h3>
+     <div class="pass-price"><b>{o.price}</b>{o.priceNote && <span>{o.priceNote}</span>}</div>
+     <p>{o.text}</p>
+     <ul class="pts">{o.points.map((p) => <li><svg><use href="#i-check"/></svg>{p}</li>)}</ul>
+     <a class={`btn ${o.featured ? '' : 'ghost'}`} href={o.cta.href} data-burst {...(o.cta.external ? { target: '_blank', rel: 'noopener' } : {})}>{o.cta.label}</a>
+    </li>
+   ))}
+  </ul>
+ </div>
+</section>
+
+<style>
+.entry{background:linear-gradient(180deg,var(--night),var(--night-2))}
+.passes{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:18px;align-items:stretch}
+.pass{position:relative;display:flex;flex-direction:column;border-radius:26px;padding:26px 24px 24px;background:linear-gradient(170deg,var(--grape-2),var(--grape));border:1px solid var(--line);
+  transition:transform .35s var(--ease),box-shadow .35s,opacity .7s ease;transform-style:preserve-3d}
+.pass::before,.pass::after{content:"";position:absolute;top:132px;width:24px;height:24px;border-radius:50%;background:var(--night-2)}
+.pass::before{left:-13px}.pass::after{right:-13px}
+.pass:hover{box-shadow:0 26px 50px rgba(0,0,0,.4)}
+.pass.featured{background:linear-gradient(170deg,#8A3DF0,#5A1BB0);border-color:rgba(255,255,255,.3);box-shadow:0 26px 60px rgba(123,47,214,.4)}
+.pass-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.pass-ic{width:56px;height:56px;border-radius:16px;display:grid;place-items:center;background:rgba(255,255,255,.1);color:var(--ticket)}
+.pass-ic svg{width:32px;height:32px}
+.pass-no{font:400 .8rem var(--hud);color:var(--muted)}
+.featured .pass-no{color:#fff}
+.pass h3{font-size:1.6rem;margin-bottom:8px}
+.pass-price{display:flex;align-items:baseline;gap:8px;padding-bottom:18px;margin-bottom:18px;border-bottom:2px dashed rgba(255,255,255,.18)}
+.pass-price b{font:800 2rem/1 var(--display);color:var(--ticket)}
+.pass-price span{color:var(--muted);font-weight:600;font-size:.9rem}
+.featured .pass-price span{color:#EDE2FF}
+.pass p{color:#E2D6FF;font-size:.97rem}
+.pts{list-style:none;margin:0 0 22px;padding:0;display:grid;gap:8px}
+.pts li{display:flex;gap:10px;align-items:flex-start;font-weight:600;font-size:.95rem}
+.pts svg{width:18px;height:18px;color:var(--mint);flex:none;margin-top:3px}
+.pass .btn{margin-top:auto;align-self:flex-start}
+@media (max-width:900px){
+  .passes{grid-template-columns:1fr}
+  .pass::before,.pass::after{display:none}
+}
+</style>
+
+<script>
+  import { reduceMotion } from '../../lib/global';
+  if (!reduceMotion() && matchMedia('(pointer:fine)').matches) {
+    document.querySelectorAll<HTMLElement>('.pass').forEach((el) => {
+      el.addEventListener('pointermove', (e) => {
+        const r = el.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5;
+        el.style.transform = `perspective(900px) rotateY(${x * 8}deg) rotateX(${-y * 8}deg) translateY(-4px)`;
+      });
+      el.addEventListener('pointerleave', () => { el.style.transform = ''; });
+    });
+  }
+</script>

@@ -1,0 +1,115 @@
+---
+const names = ['Alex', 'Sam', 'Jordan', 'Riley', 'Casey', 'Taylor'];
+---
+<section class="mafia" id="mafia">
+ <div class="wrap mafia-grid">
+  <div class="rv">
+   <span class="eyebrow">Mini game · win XP</span>
+   <h2>Who’s the Mafia?</h2>
+   <p class="lead just">One of these six is lying. You get two cards. Catch the Mafia on your first card for <b>100 XP</b>, on your second for <b>50 XP</b>.</p>
+   <p class="lead just">That’s Running Mafia Night in a nutshell, except at Gameplex there are 10 of you, two rounds and a drink each.</p>
+   <div class="score" aria-live="polite">
+    <span class="tries" id="tries" aria-label="Cards left"><i></i><i></i></span>
+    <span id="mafiaMsg">Pick a card. You have <b>2 cards</b>.</span>
+   </div>
+   <div class="mafia-ctas">
+    <button class="btn small ghost" id="mafiaReset" type="button">Shuffle again</button>
+    <a class="btn small" href="/events" data-burst>Book a Mafia Night, $20 each</a>
+   </div>
+  </div>
+  <div class="table-top">
+   <ul class="suspects" id="suspects" aria-label="Six suspects" data-names={JSON.stringify(names)}>
+    {names.map((n) => (
+     <li><button class="card" type="button" aria-label={`Accuse ${n}`} disabled>
+      <span class="side back"><svg viewBox="0 0 48 48"><use href="#i-person"/></svg><small>{n.toUpperCase()}</small></span>
+      <span class="side front"><svg viewBox="0 0 48 48"><use href="#i-person"/></svg>Townsperson</span>
+     </button></li>
+    ))}
+   </ul>
+  </div>
+ </div>
+</section>
+
+<style is:global>
+.mafia{background:radial-gradient(700px 420px at 75% 40%,rgba(255,107,139,.18),transparent 70%),radial-gradient(500px 300px at 10% 80%,rgba(123,47,214,.2),transparent 70%)}
+.mafia-grid{display:grid;grid-template-columns:.95fr 1.05fr;gap:56px;align-items:center}
+.mafia .lead b{color:var(--ticket)}
+.mafia .score{display:flex;align-items:center;gap:14px;min-height:3.4em;margin:8px 0 18px;padding:12px 16px;border-radius:16px;background:rgba(43,17,80,.6);border:1px solid var(--line);font-weight:600;color:#EDE4FF}
+.mafia .score b{color:var(--ticket)}
+.mafia .tries{display:flex;gap:6px;flex:none}
+.mafia .tries i{width:16px;height:22px;border-radius:4px;background:var(--lilac);box-shadow:0 0 10px rgba(197,155,255,.6);transition:opacity .3s,transform .3s}
+.mafia .tries i.used{opacity:.2;transform:scale(.8)}
+.mafia-ctas{display:flex;gap:12px;flex-wrap:wrap}
+
+.mafia .table-top{position:relative;border-radius:32px;padding:28px;background:radial-gradient(closest-side at 50% 45%,rgba(255,212,71,.12),transparent),linear-gradient(160deg,#2A1050,#170828);border:1px solid var(--line);box-shadow:inset 0 0 60px rgba(0,0,0,.5)}
+.mafia .suspects{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;list-style:none;margin:0;padding:0;perspective:1000px}
+.mafia .card{width:100%;aspect-ratio:3/4;border:0;padding:0;background:none;cursor:pointer;position:relative;transform-style:preserve-3d;transition:transform .65s var(--ease)}
+.mafia .card:not(:disabled):hover{transform:translateY(-6px) rotate(-1.5deg)}
+.mafia .card.flip{transform:rotateY(180deg)}
+.mafia .card .side{position:absolute;inset:0;border-radius:18px;display:grid;place-items:center;align-content:center;gap:8px;backface-visibility:hidden;font-weight:800}
+.mafia .card .back{background:repeating-linear-gradient(45deg,rgba(255,255,255,.04) 0 8px,transparent 8px 16px),linear-gradient(160deg,#3B1870,#241046);border:2px solid var(--line-2)}
+.mafia .card .back svg{width:48%;color:var(--lilac);opacity:.85}
+.mafia .card .back small{font:400 .64rem var(--hud);color:var(--muted)}
+.mafia .card:not(:disabled):hover .back{border-color:var(--ticket)}
+.mafia .card .front{transform:rotateY(180deg);background:#F6F0FF;color:var(--ink);border:2px solid #E2D3FB}
+.mafia .card .front svg{width:44%}
+.mafia .card.is-mafia .front{background:var(--coral);color:#fff;border-color:#fff}
+.mafia .card:disabled{cursor:default}
+.mafia .card.shake{animation:shake .45s}
+@keyframes shake{25%{translate:-6px 0}50%{translate:6px 0}75%{translate:-3px 0}}
+@media (max-width:1020px){.mafia .mafia-grid{grid-template-columns:1fr;gap:32px}}
+@media (max-width:640px){.mafia .table-top{padding:16px}.mafia .suspects{gap:10px}}
+</style>
+
+<script>
+  import { addXP, award, burst } from '../../lib/global';
+  const sus = document.getElementById('suspects')!;
+  const msg = document.getElementById('mafiaMsg')!;
+  const tries = Array.from(document.querySelectorAll('#tries i'));
+  const names: string[] = JSON.parse(sus.dataset.names || '[]');
+  let left = 2, mafia = 0, wins = 0;
+
+  function deal() {
+    mafia = Math.floor(Math.random() * names.length);
+    left = 2;
+    tries.forEach((t) => t.classList.remove('used'));
+    msg.innerHTML = 'Pick a card. You have <b>2 cards</b>.';
+    sus.innerHTML = names.map((n, i) => {
+      const m = i === mafia;
+      return `<li><button class="card${m ? ' is-mafia' : ''}" type="button" aria-label="Accuse ${n}" data-m="${m ? 1 : 0}" data-n="${n}">`
+        + `<span class="side back"><svg viewBox="0 0 48 48"><use href="#i-person"/></svg><small>${n.toUpperCase()}</small></span>`
+        + `<span class="side front"><svg viewBox="0 0 48 48"><use href="#${m ? 'i-hat' : 'i-person'}"/></svg>${m ? 'Mafia!' : 'Townsperson'}</span></button></li>`;
+    }).join('');
+  }
+  function end(reveal: boolean) {
+    sus.querySelectorAll<HTMLButtonElement>('.card').forEach((c) => {
+      c.disabled = true;
+      if (reveal && c.dataset.m === '1') setTimeout(() => c.classList.add('flip'), 350);
+    });
+  }
+  sus.addEventListener('click', (e) => {
+    const c = (e.target as HTMLElement).closest<HTMLButtonElement>('.card');
+    if (!c || c.disabled || left <= 0) return;
+    c.classList.add('flip'); c.disabled = true;
+    tries[2 - left]?.classList.add('used');
+    left--;
+    if (c.dataset.m === '1') {
+      const pts = left === 1 ? 100 : 50;
+      wins++;
+      msg.innerHTML = `You caught <b>${c.dataset.n}</b>. +${pts} XP. Now try it with 10 real friends.`;
+      end(false);
+      const r = c.getBoundingClientRect();
+      setTimeout(() => burst(r.left + r.width / 2, r.top + r.height / 2, 28), 300);
+      if (!award('mafia', 'Caught the Mafia', pts, '🕵')) addXP(pts, 'Caught the Mafia again', '🕵');
+      if (wins === 3) award('detective', 'Detective: 3 catches', 50, '🔎');
+    } else if (left > 0) {
+      msg.innerHTML = `${c.dataset.n} is innocent. <b>1 card</b> left.`;
+    } else {
+      msg.innerHTML = 'The Mafia got away. That happens a lot at Mafia Night.';
+      setTimeout(() => c.classList.add('shake'), 600);
+      end(true);
+    }
+  });
+  document.getElementById('mafiaReset')!.addEventListener('click', deal);
+  deal();
+</script>

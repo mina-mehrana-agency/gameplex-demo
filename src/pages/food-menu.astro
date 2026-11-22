@@ -1,0 +1,202 @@
+---
+import Base from '../layouts/Base.astro';
+import { menu, menuGroups } from '../data/menu';
+import { promotions } from '../data/promotions';
+const promoData = JSON.stringify(promotions.filter((p) => p.active && (p.kind === 'food' || p.kind === 'drink')).map((p) => ({ id: p.id, days: p.days, title: p.title, short: p.short, price: p.price, note: p.note ?? '', kind: p.kind })));
+const promoImg: Record<string, string> = {
+  'mon-wings': '/img/menu/wings.webp', 'thu-wings': '/img/menu/wings.webp', 'sun-wings': '/img/menu/wings.webp',
+  'tue-tenders': '/img/menu/wings.webp', 'wed-cocktail': '/img/menu/cocktail.webp', 'fri-milkshake': '/img/menu/shake.webp', 'sat-tequila': '/img/menu/cocktail.webp',
+};
+---
+<Base title="Food Menu | Gameplex Café and Bar, Thornhill" description="The Gameplex menu: wings, burgers, Persian snacks, flatbread pizza, pasta, coffee, shakes, smoothies, cocktails and beer, plus a food or drink special every night." current="/food-menu">
+ <section class="page-hero menu-hero">
+  <div class="wrap mh-grid">
+   <div>
+    <span class="eyebrow">Food menu</span>
+    <h1>Fuel for the <span class="glow">next round.</span></h1>
+    <p class="lead">A food or drink special every night. Order at the counter and keep playing.</p>
+   </div>
+   <div class="tonight" id="tonight" data-promos={promoData} data-imgs={JSON.stringify(promoImg)} hidden>
+    <img id="tnImg" src="/img/menu/wings.webp" alt="" width="420" height="420">
+    <div>
+     <span class="tn-lbl" id="tnLbl">TONIGHT'S SPECIAL</span>
+     <h2 id="tnTitle"></h2>
+     <p id="tnNote"></p>
+     <span class="tag mint" id="tnPrice"></span>
+    </div>
+   </div>
+  </div>
+ </section>
+
+ <section class="menu">
+  <div class="wrap">
+   <div class="menu-bar">
+    <div class="modes" role="tablist" aria-label="Menu">
+     {menuGroups.map((g, i) => <button role="tab" type="button" aria-selected={i === 0 ? 'true' : 'false'} data-g={g.id}>{g.label}</button>)}
+    </div>
+    <label class="msearch"><svg><use href="#i-search"/></svg><span class="sr">Search the menu</span><input type="search" id="mq" placeholder="Search the menu" autocomplete="off"></label>
+   </div>
+   <nav class="chips-bar" aria-label="Menu sections" id="chips"></nav>
+
+   <div class="sections" id="sections">
+    {menu.map((s) => (
+     <section class="msec" id={`m-${s.id}`} data-g={s.group} data-title={s.title} aria-labelledby={`mh-${s.id}`}>
+      <header class="msec-h">
+       {s.img && <img src={s.img} alt="" width="420" height="420" loading="lazy">}
+       <div>
+        <h2 id={`mh-${s.id}`}>{s.title}</h2>
+        {s.note && <p class="msec-note">{s.note}</p>}
+       </div>
+      </header>
+      <ul class="items">
+       {s.items.map((it) => (
+        <li class={`item ${it.available === false ? 'out' : ''}`} data-id={it.id} data-name={`${it.name} ${it.desc ?? ''}`.toLowerCase()} data-deals={(it.dealIds ?? []).join(',')} data-square={it.squareItemId ?? ''}>
+         {it.img && <img class="it-img" src={it.img} alt={it.name} width="420" height="420" loading="lazy">}
+         <div class="it-main">
+          <div class="it-top">
+           <h3>{it.name}</h3>
+           <span class="dots" aria-hidden="true"></span>
+           {it.price && <span class="it-price">${it.price}</span>}
+          </div>
+          {it.desc && <p>{it.desc}</p>}
+          <span class="it-deal" hidden></span>
+          {it.available === false && <span class="chip off">Sold out tonight</span>}
+         </div>
+        </li>
+       ))}
+      </ul>
+     </section>
+    ))}
+   </div>
+   <p class="empty" id="mEmpty" hidden>Nothing on the menu matches that search.</p>
+  </div>
+ </section>
+</Base>
+
+<style>
+.menu-hero{padding-bottom:28px}
+.mh-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:36px;align-items:end}
+.tonight{display:grid;grid-template-columns:130px 1fr;gap:18px;align-items:center;padding:18px;border-radius:26px;background:linear-gradient(160deg,#3A1A6B,#2B1150);border:2px solid var(--mint);box-shadow:0 20px 50px rgba(79,240,180,.12);animation:tnIn .6s var(--ease)}
+@keyframes tnIn{from{transform:perspective(600px) rotateX(40deg);opacity:0}}
+.tonight img{width:130px;height:130px;border-radius:50%;object-fit:cover;border:4px solid rgba(255,255,255,.15)}
+.tn-lbl{font:400 .66rem var(--hud);color:var(--mint)}
+.tonight h2{font-size:1.6rem;margin:8px 0 4px}
+.tonight p{color:var(--muted);margin:0 0 10px;font-size:.95rem}
+.menu{padding-top:20px}
+.menu-bar{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.modes{display:flex;gap:6px;padding:6px;border-radius:18px;background:var(--grape);border:1px solid var(--line)}
+.modes button{padding:12px 22px;border-radius:13px;border:0;background:none;font:800 1.05rem var(--display);cursor:pointer;color:var(--muted);transition:background .25s,color .25s}
+.modes button[aria-selected=true]{background:var(--ticket);color:var(--ink);box-shadow:0 4px 0 var(--ticket-d)}
+.msearch{flex:1 1 260px;display:flex;align-items:center;gap:10px;padding:0 16px;border-radius:14px;background:var(--grape);border:2px solid var(--line-2)}
+.msearch:focus-within{border-color:var(--ticket)}
+.msearch svg{width:20px;height:20px;color:var(--lilac)}
+.msearch input{flex:1;border:0;background:none;padding:13px 0;outline:none}
+.chips-bar{position:sticky;top:var(--head-h);z-index:20;display:flex;gap:8px;overflow-x:auto;padding:12px 0;margin-bottom:12px;background:linear-gradient(180deg,var(--night) 75%,transparent);scrollbar-width:none}
+.chips-bar::-webkit-scrollbar{display:none}
+.chips-bar :global(a){flex:none;padding:8px 14px;border-radius:999px;border:1px solid var(--line-2);background:rgba(43,17,80,.7);color:#EDE4FF;font-weight:700;font-size:.9rem;text-decoration:none;white-space:nowrap}
+.chips-bar :global(a.on){border-color:var(--ticket);color:var(--ticket)}
+.chips-bar :global(a.tn){border-color:var(--mint);color:var(--mint)}
+.sections{display:grid;gap:22px}
+.msec{border-radius:28px;background:linear-gradient(170deg,var(--grape-2),var(--grape));border:1px solid var(--line);padding:26px;scroll-margin-top:calc(var(--head-h) + 70px)}
+.msec-h{display:flex;align-items:center;gap:18px;margin-bottom:16px}
+.msec-h img{width:84px;height:84px;border-radius:50%;object-fit:cover;border:3px solid var(--ticket);flex:none}
+.msec h2{font-size:clamp(1.5rem,2.4vw,2rem);margin:0}
+.msec-note{margin:6px 0 0;color:var(--ticket);font-weight:700}
+.items{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:6px 34px}
+.item{display:flex;gap:14px;align-items:flex-start;padding:12px 0;border-bottom:1px dashed rgba(197,155,255,.16);transition:background .3s}
+.it-img{width:64px;height:64px;border-radius:14px;object-fit:cover;flex:none}
+.it-main{flex:1;min-width:0}
+.it-top{display:flex;align-items:baseline;gap:8px}
+.item h3{font:700 1.05rem/1.25 var(--body);letter-spacing:0;margin:0}
+.dots{flex:1;border-bottom:2px dotted rgba(197,155,255,.3);transform:translateY(-4px);min-width:16px}
+.it-price{font:800 1.05rem var(--display);color:var(--ticket);white-space:nowrap}
+.item p{margin:4px 0 0;color:var(--muted);font-size:.92rem;line-height:1.45}
+.it-deal{display:inline-flex;margin-top:8px;padding:4px 10px;border-radius:8px;background:var(--mint);color:var(--ink);font-weight:800;font-size:.82rem}
+.item.deal-on h3{color:var(--mint)}
+.item.out{opacity:.45}
+.item.out .it-price{text-decoration:line-through}
+.item.out .chip{margin-top:8px}
+.empty{color:var(--muted);font-weight:600}
+@media (max-width:900px){.mh-grid{grid-template-columns:1fr}.items{grid-template-columns:1fr}}
+@media (max-width:640px){.msec{padding:18px}.tonight{grid-template-columns:96px 1fr}.tonight img{width:96px;height:96px}.modes button{padding:10px 16px}}
+</style>
+
+<script>
+  import { torontoToday } from '../lib/global';
+  type P = { id: string; days: number[]; title: string; short: string; price: string; note: string; kind: string };
+  const today = torontoToday();
+  const tn = document.getElementById('tonight')!;
+  const promos: P[] = JSON.parse(tn.dataset.promos || '[]');
+  const imgs: Record<string, string> = JSON.parse(tn.dataset.imgs || '{}');
+  const tonight = promos.filter((p) => p.days.includes(today));
+  if (tonight[0]) {
+    const p = tonight[0];
+    tn.hidden = false;
+    document.getElementById('tnTitle')!.textContent = p.title;
+    document.getElementById('tnNote')!.textContent = p.note || (p.kind === 'drink' ? 'Drink special, tonight only.' : 'Food special, tonight only.');
+    document.getElementById('tnPrice')!.textContent = p.price;
+    (document.getElementById('tnImg') as HTMLImageElement).src = imgs[p.id] || '/img/menu/wings.webp';
+  }
+  const todayIds = new Set(tonight.map((p) => p.id));
+  const items = Array.from(document.querySelectorAll<HTMLElement>('.item'));
+  const dealSecs = new Set<string>();
+  items.forEach((it) => {
+    const hit = (it.dataset.deals || '').split(',').find((d) => todayIds.has(d));
+    if (!hit) return;
+    const p = tonight.find((x) => x.id === hit)!;
+    it.classList.add('deal-on');
+    const b = it.querySelector<HTMLElement>('.it-deal')!;
+    b.textContent = `Tonight: ${p.short} ${p.price}`; b.hidden = false;
+    dealSecs.add(it.closest('.msec')!.id);
+  });
+
+  const secs = Array.from(document.querySelectorAll<HTMLElement>('.msec'));
+  const chips = document.getElementById('chips')!;
+  const modes = Array.from(document.querySelectorAll<HTMLButtonElement>('.modes button'));
+  const q = document.getElementById('mq') as HTMLInputElement;
+  let group = 'food';
+  function buildChips() {
+    chips.innerHTML = '';
+    secs.filter((s) => s.dataset.g === group).forEach((s) => {
+      const a = document.createElement('a');
+      a.href = '#' + s.id; a.textContent = s.dataset.title!;
+      if (dealSecs.has(s.id)) { a.classList.add('tn'); a.textContent += ' · tonight'; }
+      chips.appendChild(a);
+    });
+  }
+  function show() {
+    const t = q.value.trim().toLowerCase();
+    let any = 0;
+    secs.forEach((s) => {
+      const inGroup = t ? true : s.dataset.g === group;
+      let n = 0;
+      s.querySelectorAll<HTMLElement>('.item').forEach((it) => {
+        const ok = !t || it.dataset.name!.includes(t) || s.dataset.title!.toLowerCase().includes(t);
+        it.hidden = !ok; if (ok) n++;
+      });
+      s.hidden = !inGroup || n === 0;
+      if (!s.hidden) any++;
+    });
+    chips.hidden = !!t;
+    document.getElementById('mEmpty')!.hidden = any > 0;
+  }
+  modes.forEach((b) => b.addEventListener('click', () => {
+    group = b.dataset.g!;
+    modes.forEach((x) => x.setAttribute('aria-selected', String(x === b)));
+    q.value = '';
+    buildChips(); show();
+  }));
+  q.addEventListener('input', show);
+  // Start on the group that has tonight's special
+  const firstDeal = secs.find((s) => dealSecs.has(s.id));
+  if (firstDeal) { group = firstDeal.dataset.g!; modes.forEach((x) => x.setAttribute('aria-selected', String(x.dataset.g === group))); }
+  buildChips(); show();
+  // highlight the chip of the section in view
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver((es) => es.forEach((e) => {
+      if (!e.isIntersecting) return;
+      chips.querySelectorAll('a').forEach((a) => a.classList.toggle('on', a.getAttribute('href') === '#' + e.target.id));
+    }), { rootMargin: '-40% 0px -55% 0px' });
+    secs.forEach((s) => io.observe(s));
+  }
+</script>

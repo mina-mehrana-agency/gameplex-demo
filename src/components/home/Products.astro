@@ -1,0 +1,162 @@
+---
+import { activities, statusLabel } from '../../data/activities';
+import { promotions } from '../../data/promotions';
+const data = JSON.stringify({
+  acts: activities.map((a) => ({ key: a.key, status: a.status, statusNote: a.statusNote ?? '', days: a.days ?? [], promoIds: a.promoIds ?? [], inPass: a.inPass, color: a.color })),
+  promos: promotions.filter((p) => p.active).map((p) => ({ id: p.id, kind: p.kind, days: p.days, title: p.title, price: p.price })),
+  labels: statusLabel,
+});
+const first = activities[0];
+---
+<section class="play" id="play" style={`--act:${first.color}`} data-acts={data}>
+ <div class="play-bg" aria-hidden="true"></div>
+ <div class="wrap">
+  <div class="sec-head rv">
+   <div>
+    <span class="eyebrow">Choose your game</span>
+    <h2>What’s on the floor tonight</h2>
+   </div>
+   <p class="lead">Tap a game to see if it’s available tonight, what it costs and today’s deal for it.</p>
+  </div>
+
+  <div class="play-grid">
+   <ul class="roster" role="tablist" aria-label="Games" aria-orientation="vertical">
+    {activities.map((a, i) => (
+     <li>
+      <button role="tab" type="button" id={`pt-${a.key}`} aria-controls={`pp-${a.key}`} aria-selected={i === 0 ? 'true' : 'false'} tabindex={i === 0 ? 0 : -1} data-k={a.key} style={`--c:${a.color}`}>
+       <svg viewBox="0 0 48 48"><use href={`#i-${a.icon}`}/></svg>
+       <span class="r-name">{a.name}</span>
+       <span class={`r-dot s-${a.status}`} data-dot={a.key} aria-hidden="true"></span>
+      </button>
+     </li>
+    ))}
+   </ul>
+
+   <div class="stage">
+    {activities.map((a, i) => (
+     <article class="act" id={`pp-${a.key}`} role="tabpanel" aria-labelledby={`pt-${a.key}`} data-k={a.key} hidden={i !== 0}>
+      <span class="giant" aria-hidden="true">{a.name}</span>
+      <div class="act-visual">
+       {a.image ? <img src={a.image} alt="" loading="lazy" width="520" height="520" /> : <span class="act-icon"><svg viewBox="0 0 48 48"><use href={`#i-${a.icon}`}/></svg></span>}
+      </div>
+      <div class="act-body">
+       <div class="chips">
+        <span class={`chip ${a.status === 'available' ? 'on' : a.status === 'limited' ? 'limited' : 'off'}`} data-status={a.key}>{statusLabel[a.status]}{a.statusNote ? `: ${a.statusNote}` : ''}</span>
+        <span class="chip deal" data-deal={a.key} hidden></span>
+       </div>
+       <h3>{a.name}</h3>
+       <p class="sub">{a.sub}</p>
+       <p class="txt">{a.text}</p>
+       <div class="act-row">
+        <span class="tag">{a.price}{a.priceNote && <s>{a.priceNote}</s>}</span>
+        <a class="btn small" href={a.cta.href} data-burst>{a.cta.label}</a>
+       </div>
+      </div>
+     </article>
+    ))}
+   </div>
+  </div>
+ </div>
+</section>
+
+<style>
+.play{overflow:hidden;isolation:isolate}
+.play-bg{position:absolute;inset:0;z-index:-1;background:radial-gradient(900px 600px at 70% 55%,color-mix(in srgb,var(--act) 55%,transparent),transparent 70%),linear-gradient(180deg,var(--night),color-mix(in srgb,var(--act) 18%,var(--night)));transition:background .6s ease}
+.play-grid{display:grid;grid-template-columns:300px minmax(0,1fr);gap:28px;align-items:stretch}
+.roster{list-style:none;margin:0;padding:0;display:grid;gap:8px;align-content:start}
+.roster button{width:100%;display:grid;grid-template-columns:40px 1fr auto;align-items:center;gap:12px;padding:10px 14px;border-radius:16px;border:2px solid var(--line);background:rgba(19,7,36,.55);cursor:pointer;text-align:left;
+  transition:transform .25s var(--ease),border-color .2s,background .3s;backdrop-filter:blur(6px)}
+.roster button svg{width:34px;height:34px;color:var(--lilac);transition:transform .35s var(--ease),color .2s}
+.r-name{font-weight:700}
+.r-dot{width:10px;height:10px;border-radius:50%;background:var(--mint);box-shadow:0 0 10px currentColor}
+.r-dot.s-limited{background:var(--ticket)}.r-dot.s-unavailable{background:var(--coral)}
+.roster button:hover{transform:translateX(4px);border-color:var(--line-2)}
+.roster button:hover svg{transform:scale(1.12) rotate(-6deg)}
+.roster button[aria-selected=true]{background:var(--c);border-color:rgba(255,255,255,.55);transform:translateX(8px);box-shadow:0 14px 30px rgba(0,0,0,.35)}
+.roster button[aria-selected=true] svg{color:#fff}
+
+.stage{position:relative;border-radius:32px;background:rgba(19,7,36,.5);border:1px solid rgba(255,255,255,.14);min-height:500px;overflow:hidden;backdrop-filter:blur(8px)}
+.stage::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(255,255,255,.025) 0 2px,transparent 2px 4px);pointer-events:none}
+.act{position:relative;display:grid;grid-template-columns:.9fr 1.1fr;gap:24px;align-items:center;padding:36px;min-height:500px}
+.act:not([hidden]){animation:actIn .5s var(--ease-out)}
+@keyframes actIn{from{opacity:0;transform:translateX(24px)}}
+.giant{position:absolute;left:-6px;bottom:-14px;font:800 clamp(4rem,9vw,8rem)/.85 var(--display);font-stretch:80%;letter-spacing:-.04em;color:transparent;-webkit-text-stroke:1.5px rgba(255,255,255,.12);white-space:nowrap;pointer-events:none;text-transform:uppercase}
+.act-visual{position:relative;display:grid;place-items:center;aspect-ratio:1}
+.act-visual img{width:100%;height:100%;object-fit:cover;border-radius:50%;border:6px solid rgba(255,255,255,.12);box-shadow:0 30px 60px rgba(0,0,0,.45);animation:bob 6s ease-in-out infinite alternate}
+.act-icon{width:78%;aspect-ratio:1;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 35% 30%,color-mix(in srgb,var(--act) 70%,#fff),var(--act));box-shadow:0 30px 60px rgba(0,0,0,.45),inset 0 -20px 40px rgba(0,0,0,.25);animation:bob 6s ease-in-out infinite alternate}
+.act-icon svg{width:52%;height:52%;color:#fff}
+@keyframes bob{from{transform:translateY(-8px) rotate(-3deg)}to{transform:translateY(8px) rotate(3deg)}}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.act-body h3{font-size:clamp(1.9rem,3vw,2.6rem);margin-bottom:6px}
+.sub{color:var(--ticket);font-weight:700;margin-bottom:12px}
+.txt{color:#E2D6FF;text-align:justify;hyphens:auto;max-width:52ch}
+.act-row{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:18px}
+
+@media (max-width:1020px){
+  .play-grid{grid-template-columns:1fr}
+  .roster{grid-template-columns:repeat(4,minmax(150px,1fr));overflow-x:auto;padding-bottom:6px;scroll-snap-type:x mandatory}
+  .roster li{scroll-snap-align:start}
+  .roster button{grid-template-columns:30px 1fr auto;padding:9px 11px}
+  .roster button svg{width:26px;height:26px}
+  .roster button[aria-selected=true],.roster button:hover{transform:translateY(-3px)}
+  .r-name{font-size:.9rem;line-height:1.15}
+}
+@media (max-width:760px){
+  .roster{grid-template-columns:repeat(8,minmax(140px,1fr));margin-inline:-16px;padding-inline:16px}
+  .act{grid-template-columns:1fr;padding:22px;min-height:0}
+  .act-visual{max-width:220px;margin:0 auto}
+  .stage{min-height:0}
+}
+</style>
+
+<script>
+  import { torontoToday, award } from '../../lib/global';
+  type A = { key: string; status: string; statusNote: string; days: number[]; promoIds: string[]; inPass: boolean; color: string };
+  type P = { id: string; kind: string; days: number[]; title: string; price: string };
+  const sec = document.getElementById('play')!;
+  const { acts, promos, labels } = JSON.parse(sec.dataset.acts || '{}') as { acts: A[]; promos: P[]; labels: Record<string, string> };
+  const today = torontoToday();
+  const todayPromos = promos.filter((p) => p.days.includes(today));
+  const todayEntry = todayPromos.find((p) => p.kind === 'entry');
+
+  // Today's status + deal per game
+  acts.forEach((a) => {
+    let status = a.status, note = a.statusNote;
+    if (a.days.length && !a.days.includes(today)) { status = 'unavailable'; note = ''; }
+    const chip = sec.querySelector<HTMLElement>(`[data-status="${a.key}"]`)!;
+    chip.className = `chip ${status === 'available' ? 'on' : status === 'limited' ? 'limited' : 'off'}`;
+    chip.textContent = labels[status] + (note ? `: ${note}` : '');
+    const dot = sec.querySelector<HTMLElement>(`[data-dot="${a.key}"]`)!;
+    dot.className = `r-dot s-${status}`;
+    const own = todayPromos.find((p) => a.promoIds.includes(p.id));
+    const deal = sec.querySelector<HTMLElement>(`[data-deal="${a.key}"]`)!;
+    if (own) { deal.textContent = `Today’s deal: ${own.title} ${own.price}`; deal.hidden = false; }
+    else if (a.inPass && todayEntry) { deal.textContent = `In tonight’s ${todayEntry.title}, ${todayEntry.price}`; deal.hidden = false; }
+  });
+
+  const tabs = Array.from(sec.querySelectorAll<HTMLButtonElement>('[role=tab]'));
+  const panels = Array.from(sec.querySelectorAll<HTMLElement>('[role=tabpanel]'));
+  const seen = new Set<string>([acts[0]?.key]);
+  function select(k: string, focus = false) {
+    tabs.forEach((t) => {
+      const on = t.dataset.k === k;
+      t.setAttribute('aria-selected', String(on)); t.tabIndex = on ? 0 : -1;
+      if (on) { if (focus) t.focus(); t.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' }); }
+    });
+    panels.forEach((p) => { p.hidden = p.dataset.k !== k; });
+    const a = acts.find((x) => x.key === k);
+    if (a) sec.style.setProperty('--act', a.color);
+    seen.add(k);
+    if (seen.size >= 3) award('browse', 'Window shopper: 3 games checked', 25, '🎮');
+    if (seen.size >= acts.length) award('allgames', 'Tried every game', 100, '🏆');
+  }
+  tabs.forEach((t, i) => {
+    t.addEventListener('click', () => select(t.dataset.k!));
+    t.addEventListener('keydown', (e) => {
+      const m = ({ ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 } as Record<string, number>)[e.key];
+      if (!m) return;
+      e.preventDefault();
+      select(tabs[(i + m + tabs.length) % tabs.length].dataset.k!, true);
+    });
+  });
+</script>

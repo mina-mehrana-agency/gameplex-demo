@@ -1,0 +1,209 @@
+---
+import NeonDice from './NeonDice.astro';
+import { promotions, kindLabel } from '../../data/promotions';
+const promoData = JSON.stringify(
+  promotions.filter((p) => p.active).map((p) => ({ ...p, kindLabel: kindLabel[p.kind] }))
+);
+// Floating glass 3D pieces (rendered once with three.js, /img/glass). Size, blur and depth vary:
+// big ones sit close (blurred, move more with the pointer), small ones far (sharp, move less).
+const floaters = [
+  { src: 'meeple', size: 104, left: '1%', bottom: '8%', blur: 0.75, depth: 26, dur: 7.5, r0: 10, r1: -8 },
+  { src: 'pad', size: 100, left: '3%', top: '13%', blur: 1.2, depth: 46, dur: 9, r0: -8, r1: 10 },
+  { src: 'dice', size: 46, right: '41%', bottom: '5%', blur: 1.05, depth: 10, dur: 6.5, r0: 18, r1: -4 },
+  { src: 'dart', size: 96, right: '30%', top: '-3%', blur: 0.75, depth: 24, dur: 8.5, r0: -10, r1: 6 },
+  { src: 'ball', size: 128, right: '4%', bottom: '10%', blur: 2.1, depth: 40, dur: 10, r0: 6, r1: -6 },
+];
+const pips: Record<number, number[][]> = {
+  1: [[50, 50]],
+  2: [[28, 28], [72, 72]],
+  3: [[26, 26], [50, 50], [74, 74]],
+  4: [[28, 28], [72, 28], [28, 72], [72, 72]],
+  5: [[26, 26], [74, 26], [50, 50], [26, 74], [74, 74]],
+  6: [[28, 24], [72, 24], [28, 50], [72, 50], [28, 76], [72, 76]],
+};
+const faces = [
+  { n: 1, cls: 'f-front' }, { n: 6, cls: 'f-back' }, { n: 3, cls: 'f-right' },
+  { n: 4, cls: 'f-left' }, { n: 2, cls: 'f-top' }, { n: 5, cls: 'f-bottom' },
+];
+---
+<section class="hero" id="top">
+ <div class="pieces" aria-hidden="true">
+  {floaters.map((f) => (
+   <div class="piece" data-depth={f.depth} style={`--s:${f.size}px;--b:${f.blur}px;--dur:${f.dur}s;--dl:-${(f.dur * 0.37).toFixed(1)}s;--r0:${f.r0}deg;--r1:${f.r1}deg;${f.left ? `left:${f.left};` : ''}${f.right ? `right:${f.right};` : ''}${f.top ? `top:${f.top};` : ''}${f.bottom ? `bottom:${f.bottom};` : ''}`}>
+    <div class="pc" style={`--m:url(/img/glass/${f.src}.webp)`}>
+     <img src={`/img/glass/${f.src}.webp`} alt="" width="560" height="560" decoding="async">
+    </div>
+   </div>
+  ))}
+ </div>
+
+ <div class="wrap hero-grid">
+  <div class="hero-copy">
+   <h1>
+    <span class="line"><span>Game on,</span></span>
+    <span class="line"><span class="glow">Thornhill.</span></span>
+    <span class="kicker">Board game café, arcade, karaoke and party venue on Yonge Street, open every night until 2 AM.</span>
+   </h1>
+   <p class="lead">Hundreds of board games, 8-ball pool, ping pong, darts, PS5, gaming PCs, karaoke and Mafia nights. One pass, every game, all night.</p>
+   <div class="ctas">
+    <a class="btn" href="#entry" data-burst>How to get in <svg><use href="#i-arrow"/></svg></a>
+    <a class="btn ghost" href="/request-for-private-events">Plan a party</a>
+   </div>
+   <ul class="facts">
+    <li><b>$30</b> unlimited pass</li>
+    <li><b>200+</b> board games</li>
+    <li>Parties up to <b>80</b> guests</li>
+   </ul>
+  </div>
+
+  <div class="table" aria-labelledby="roll-title">
+   <h2 id="roll-title" class="sr">Roll the dice for tonight's deal</h2>
+   <NeonDice />
+   <button class="btn purple roll-btn" id="rollBtn" data-burst type="button">
+    <svg viewBox="0 0 48 48"><use href="#i-dice"/></svg> Roll for tonight’s deal
+   </button>
+   <div class="prize" id="prize" aria-live="polite" data-promos={promoData}>
+    <div class="prize-top"><span class="prize-lbl" id="prizeLbl">TONIGHT'S DEAL</span><span class="prize-day" id="prizeDay"></span></div>
+    <h3 id="prizeTitle">Tap roll. The dice picks tonight’s deal.</h3>
+    <p id="prizeNote">Every roll lands on something on special tonight: entry, food, drinks or events.</p>
+    <div class="prize-row"><span class="tag" id="prizeTag" hidden></span><a id="prizeLink" class="prize-link" href="#deals" hidden>See all of tonight’s deals</a></div>
+   </div>
+  </div>
+ </div>
+</section>
+
+<style>
+.hero{min-height:100vh;min-height:100svh;padding:calc(var(--head-h) + 48px) 0 56px;display:flex;flex-direction:column;justify-content:center;overflow:hidden;
+  background:radial-gradient(900px 600px at 78% 45%,rgba(123,47,214,.45),transparent 70%),radial-gradient(700px 500px at 10% 90%,rgba(255,107,139,.12),transparent 70%)}
+.hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:center;position:relative;z-index:2}
+h1{font-size:clamp(3rem,6.6vw,5.8rem);font-stretch:85%;line-height:.92;margin-bottom:22px}
+h1 .line{display:block;overflow:hidden;padding-bottom:.06em}
+h1 .line>span{display:inline-block;transform:translateY(105%);animation:rise .8s var(--ease) forwards}
+h1 .line:nth-child(2)>span{animation-delay:.12s}
+.kicker{display:block;font:700 clamp(1.02rem,1.5vw,1.22rem)/1.4 var(--body);letter-spacing:0;color:var(--lilac);margin-top:18px;font-stretch:100%;opacity:0;animation:fade .6s .5s forwards;max-width:44ch}
+.glow{color:var(--ticket);text-shadow:0 0 30px rgba(255,212,71,.35)}
+@keyframes rise{to{transform:none}}
+@keyframes fade{to{opacity:1}}
+.hero-copy .lead,.ctas,.facts{opacity:0;animation:fadeUp .7s .6s var(--ease-out) forwards}
+.ctas{animation-delay:.7s!important;display:flex;gap:14px;flex-wrap:wrap;margin:26px 0 28px}
+.facts{animation-delay:.8s!important;display:flex;gap:10px;flex-wrap:wrap;list-style:none;padding:0;margin:0}
+.facts li{padding:8px 13px;border-radius:999px;background:rgba(43,17,80,.7);border:1px solid var(--line);font-size:.95rem}
+.facts b{color:var(--ticket)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+
+.pieces{position:absolute;inset:0;pointer-events:none;z-index:1}
+.piece{position:absolute;width:calc(var(--s,60px) * var(--k,1));animation:float var(--dur,7s) ease-in-out infinite alternate;animation-delay:var(--dl,0s);filter:blur(var(--b,0px))}
+.pc{position:relative;transform:translate(var(--px,0),var(--py,0)) rotate(var(--pr,0deg));transition:transform .7s cubic-bezier(.2,.8,.2,1)}
+.pc img{display:block;width:100%;height:auto;filter:saturate(1.15) drop-shadow(0 0 16px rgba(190,120,255,.35))}
+@keyframes float{from{transform:translateY(-12px) rotate(var(--r0,-8deg))}to{transform:translateY(14px) rotate(var(--r1,10deg))}}
+
+/* Dice table */
+.table{display:grid;justify-items:center;gap:20px;opacity:0;animation:fadeUp .8s .1s var(--ease-out) forwards}
+.roll-btn{font-size:1.08rem}
+.roll-btn svg{width:22px;height:22px}
+
+.prize{width:min(100%,440px);border-radius:22px;background:linear-gradient(160deg,#3A1A6B,#2B1150);border:1px solid var(--line-2);padding:18px 20px 20px;position:relative;transform-origin:top center}
+.prize::before,.prize::after{content:"";position:absolute;top:50%;width:22px;height:22px;border-radius:50%;background:var(--night);margin-top:-11px}
+.prize::before{left:-12px}.prize::after{right:-12px}
+.prize.pop{animation:prizePop .55s var(--ease)}
+@keyframes prizePop{from{transform:perspective(600px) rotateX(70deg);opacity:.2}}
+.prize-top{display:flex;justify-content:space-between;gap:8px;margin-bottom:10px}
+.prize-lbl,.prize-day{font:400 .66rem/1 var(--hud);color:var(--mint);letter-spacing:.06em}
+.prize-day{color:var(--ticket)}
+.prize h3{font-size:1.45rem;margin-bottom:6px}
+.prize p{color:var(--muted);font-size:.95rem;line-height:1.45;margin:0 0 12px}
+.prize-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.prize-link{font-weight:700;color:var(--ticket);text-decoration:none}
+.prize-link:hover{text-decoration:underline}
+
+@media (max-width:1020px){
+  .hero-grid{grid-template-columns:1fr;gap:22px}
+  .hero{min-height:0;padding-top:calc(var(--head-h) + 28px)}
+  /* the game sits right under the H1 so it stays near the top on phones */
+  .hero-copy{display:contents}
+  h1{order:1;margin-bottom:0}
+  .table{order:2}
+  .hero-copy .lead{order:3}
+  .ctas{order:4;margin:0!important}
+  .facts{order:5}
+  .kicker{margin-top:12px}
+}
+@media (max-width:640px){
+  .piece{display:none}
+  .piece:nth-child(2),.piece:nth-child(3){display:block}
+  .piece:nth-child(2){left:auto !important;right:2% !important;top:9% !important}
+  h1{font-size:clamp(2.8rem,14vw,4.2rem)}
+  .kicker{font-size:1rem}
+}
+</style>
+
+<script>
+  import { torontoToday, award, reduceMotion } from '../../lib/global';
+  import { dayNames } from '../../data/site';
+
+  type P = { id: string; kind: string; kindLabel: string; days: number[]; title: string; short: string; price: string; was?: string; note?: string; link?: string };
+  const prize = document.getElementById('prize')!;
+  const all: P[] = JSON.parse(prize.dataset.promos || '[]');
+  const today = torontoToday();
+  const order = ['event', 'entry', 'food', 'drink'];
+  const tonight = all.filter((p) => p.days.includes(today)).sort((a, b) => order.indexOf(a.kind) - order.indexOf(b.kind));
+  document.getElementById('prizeDay')!.textContent = dayNames[today].toUpperCase();
+
+  const stage = document.getElementById('diceStage')!;
+  let lastIdx = -1, rolls = 0, waiting = false;
+
+  function show(p: P | undefined) {
+    const t = (id: string) => document.getElementById(id)!;
+    if (!p) {
+      t('prizeLbl').textContent = 'TONIGHT';
+      t('prizeTitle').textContent = 'No special tonight';
+      t('prizeNote').textContent = 'Every game is still open. Check this week’s deals below.';
+      t('prizeTag').hidden = true;
+    } else {
+      t('prizeLbl').textContent = p.kindLabel.toUpperCase();
+      t('prizeTitle').textContent = `${p.title} tonight`;
+      t('prizeNote').textContent = p.note || '';
+      const tag = t('prizeTag');
+      tag.hidden = false;
+      tag.innerHTML = '';
+      tag.append(p.price);
+      if (p.was) { const s = document.createElement('s'); s.textContent = p.was; tag.append(s); }
+    }
+    const link = t('prizeLink') as HTMLAnchorElement;
+    link.hidden = false;
+    link.href = p?.link || '#deals';
+    link.textContent = p?.link === '/events' ? 'Book tickets' : p?.link === '/food-menu' ? 'See the food menu' : 'See all of tonight’s deals';
+    prize.classList.remove('pop'); void prize.offsetWidth; prize.classList.add('pop');
+  }
+
+  // Every click on the dice or the button throws it (and changes its neon colour); the deal shows when it lands.
+  stage.addEventListener('click', () => { waiting = true; rolls++; });
+  stage.addEventListener('keydown', (e) => { if (e.key === ' ' || e.key === 'Enter') { waiting = true; rolls++; } });
+  document.getElementById('rollBtn')!.addEventListener('click', () => {
+    waiting = true; rolls++;
+    stage.dispatchEvent(new CustomEvent('dice:roll'));
+  });
+  stage.addEventListener('dice:settled', () => {
+    if (!waiting) return;
+    waiting = false;
+    let idx = tonight.length ? Math.floor(Math.random() * tonight.length) : -1;
+    if (tonight.length > 1) while (idx === lastIdx) idx = Math.floor(Math.random() * tonight.length);
+    lastIdx = idx;
+    show(tonight[idx]);
+    award('roll', 'First roll of the night', 50, '⚄');
+    if (rolls === 3) award('roll3', 'High roller: 3 rolls', 30, '⚅');
+  });
+
+  // floating pieces: sizes vary a little on every visit; they drift and turn with the pointer
+  const pcs = Array.from(document.querySelectorAll<HTMLElement>('.piece'));
+  pcs.forEach((p) => p.style.setProperty('--k', String((0.8 + Math.random() * 0.45) * (matchMedia('(max-width:640px)').matches ? 0.45 : 1))));
+  if (!reduceMotion() && matchMedia('(pointer:fine)').matches) {
+    addEventListener('pointermove', (e) => {
+      const x = e.clientX / innerWidth - 0.5, y = e.clientY / innerHeight - 0.5;
+      pcs.forEach((p) => {
+        const k = +(p.dataset.depth || 0), pc = p.firstElementChild as HTMLElement;
+        pc.style.setProperty('--px', -x * k * 1.6 + 'px'); pc.style.setProperty('--py', -y * k * 1.6 + 'px'); pc.style.setProperty('--pr', x * k * 0.35 + 'deg');
+      });
+    }, { passive: true });
+  }
+</script>

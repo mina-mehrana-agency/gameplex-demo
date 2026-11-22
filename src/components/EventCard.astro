@@ -1,0 +1,73 @@
+---
+import type { GEvent } from '../data/events';
+import { dayShort, site } from '../data/site';
+interface Props { e: GEvent; compact?: boolean }
+const { e, compact = false } = Astro.props;
+const typeLabel: Record<string, string> = { tournament: 'Weekly tournament', mafia: 'Mafia Night', event: 'Event' };
+const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const when = e.weekly != null ? `Every ${dayNames[e.weekly]}` : e.when ?? e.date ?? '';
+const soldOut = e.status === 'soldout';
+const hasLink = !!e.squareUrl && !soldOut;
+const dated = e.weekly != null || !!e.date;
+---
+<li class={`ev t-${e.type} ${compact ? 'compact' : ''}`} data-type={e.type} data-weekly={e.weekly ?? ''} data-date={e.date ?? ''}>
+ <div class="ev-pic">
+  {e.image && <img src={e.image} alt="" loading="lazy" width="360" height="360">}
+  {dated
+   ? <div class="ev-date" aria-hidden="true">
+      <span class="ev-dow">{e.weekly != null ? dayShort[e.weekly] : ''}</span>
+      <span class="ev-day" data-next>{e.weekly != null ? '' : (e.date ?? '').slice(8, 10)}</span>
+      <span class="ev-mon" data-next-mon></span>
+     </div>
+   : <div class="ev-date ev-any" aria-hidden="true"><svg viewBox="0 0 48 48"><use href={e.type === 'mafia' ? '#i-mask' : '#i-ticket'}/></svg></div>}
+ </div>
+ <div class="ev-main">
+  <span class="ev-type">{typeLabel[e.type]}{e.sample && <em class="sample">Sample date</em>}</span>
+  <h3>{e.title}</h3>
+  <p class="ev-when"><svg viewBox="0 0 48 48"><use href="#i-cal"/></svg>{when}{e.time && `, ${e.time}`}</p>
+  {!compact && e.text && <p class="ev-text">{e.text}</p>}
+  <div class="ev-side">
+   <span class={`chip ${soldOut ? 'off' : e.status === 'few' ? 'limited' : 'on'}`}>{soldOut ? 'Sold out' : e.status === 'few' ? 'Few spots left' : 'On sale'}</span>
+   <span class="tag">{e.price}</span>
+   {hasLink
+    ? <a class="btn small" href={e.squareUrl} rel="noopener" data-burst>Buy on Square <svg><use href="#i-arrow"/></svg></a>
+    : soldOut
+     ? <span class="btn small" aria-disabled="true">Sold out</span>
+     : <a class="btn small ghost" href={site.phoneHref}>Call to book</a>}
+  </div>
+ </div>
+</li>
+
+<style>
+.ev{display:grid;grid-template-columns:200px 1fr;gap:0;border-radius:24px;background:linear-gradient(160deg,var(--grape-2),var(--grape));border:1px solid var(--line);position:relative;overflow:hidden;transition:transform .3s var(--ease),border-color .2s,box-shadow .3s}
+.ev:hover{transform:translateY(-3px);border-color:var(--line-2);box-shadow:0 18px 40px rgba(0,0,0,.35)}
+.ev-pic{position:relative;min-height:180px;background:var(--night)}
+.ev-pic img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.ev-pic::after{content:"";position:absolute;right:-12px;top:50%;width:24px;height:24px;margin-top:-12px;border-radius:50%;background:var(--night)}
+.ev-date{position:absolute;left:12px;top:12px;display:grid;justify-items:center;gap:1px;min-width:62px;padding:8px 6px;border-radius:14px;background:rgba(19,7,36,.88);border:1px solid var(--line-2);backdrop-filter:blur(6px)}
+.ev-any{padding:10px}
+.ev-any svg{width:28px;height:28px;color:var(--ticket)}
+.ev-dow{font:400 .66rem var(--hud);color:var(--mint)}
+.ev-day{font:800 1.8rem/1 var(--display);color:var(--ticket)}
+.ev-mon{font:400 .58rem var(--hud);color:var(--muted)}
+.ev-main{padding:20px 22px;display:flex;flex-direction:column;gap:2px;border-left:2px dashed rgba(255,255,255,.14)}
+.ev-type{font:400 .64rem var(--hud);color:var(--muted);text-transform:uppercase;letter-spacing:.05em;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.t-mafia .ev-type{color:var(--coral)}.t-tournament .ev-type{color:var(--sky)}
+.sample{font-style:normal;background:rgba(255,212,71,.15);color:var(--ticket);padding:3px 6px;border-radius:5px}
+.ev h3{font-size:1.4rem;margin:6px 0 4px}
+.ev-when{display:flex;align-items:center;gap:8px;color:#E2D6FF;font-weight:600;margin:0}
+.ev-when svg{width:18px;height:18px;color:var(--lilac)}
+.ev-text{color:var(--muted);font-size:.95rem;margin:10px 0 0;max-width:68ch;text-align:justify;hyphens:auto}
+.ev-side{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:auto;padding-top:16px}
+.ev-side .tag{margin-left:auto}
+.ev.compact{grid-template-columns:1fr}
+.ev.compact .ev-pic{min-height:0;aspect-ratio:16/9}
+.ev.compact .ev-pic::after{display:none}
+.ev.compact .ev-main{border-left:0;border-top:2px dashed rgba(255,255,255,.14);padding:18px}
+@media (max-width:760px){
+  .ev{grid-template-columns:1fr}
+  .ev-pic{min-height:0;aspect-ratio:16/9}
+  .ev-pic::after{display:none}
+  .ev-main{border-left:0;border-top:2px dashed rgba(255,255,255,.14);padding:18px}
+}
+</style>

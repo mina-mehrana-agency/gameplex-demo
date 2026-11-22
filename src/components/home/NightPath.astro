@@ -1,0 +1,298 @@
+---
+// "Your night, one move at a time": four glass layers stack onto a game board as you scroll
+// (Mina's reference: dribbble.com/shots/27805267-3D-Mobile-App, an exploded glass UI over a phone).
+// Pure CSS 3D. The board and every card get real thickness from stacked outline slices (so the round
+// corners stay round), and the rendered glass icons (/img/glass) stand on the cards as billboards that
+// always face the viewer. The list on the left holds the real step text (h3s unchanged), lights the
+// current step and jumps to a step on click. The old version is in gameplex/design-nightpath-backup.
+const steps = [
+  { n: 1, title: 'Walk in, any night', text: 'No reservation needed. Open Monday to Friday from 6 PM and weekends from 5 PM.' },
+  { n: 2, title: 'Grab one pass', text: '$30 unlimited, $20 on Thursdays, $15 for students on Tuesdays and Sundays.' },
+  { n: 3, title: 'Play everything', text: 'Board games, pool, ping pong, darts, arcade, PS5 and PC until close.' },
+  { n: 4, title: 'Refuel at the bar', text: 'Wings and beer, cocktails, milkshakes and a special every night.' },
+];
+
+// The cards on the board (board is 440 x 600, top = back). z = height of the layer above the board.
+const cards = [
+  { icon: 'door', size: 86, x: 22, y: 392, w: 276, h: 168, z: 70, tag: 'Walk in', big: 'Doors open 6 PM', small: 'Weekends from 5 PM', chips: ['No reservation'] },
+  { icon: 'ticket', size: 116, x: 150, y: 258, w: 268, h: 164, z: 140, tag: 'Your pass', big: '$30', unit: 'unlimited', chips: ['$20 Thursdays', '$15 students'] },
+  { icon: 'dice', size: 84, x: 16, y: 128, w: 300, h: 172, z: 210, tag: 'Play', big: 'Play everything', chips: ['Board games', 'Pool', 'Ping pong', 'Darts', 'Arcade', 'PS5', 'PC'] },
+  { icon: 'cocktail', size: 116, x: 142, y: 14, w: 278, h: 164, z: 280, tag: 'The bar', big: 'Wings & beer', small: 'Cocktails · Milkshakes', chips: ['Special every night'] },
+];
+const boardSlices = Array.from({ length: 8 }, (_, k) => (k + 1) * 2.5);
+const cardSlices = [10, 8, 6, 4, 2];
+---
+<section class="nx" id="how" aria-labelledby="night-title">
+ <div class="nx-stage">
+  <div class="nx-wrap">
+   <div class="nx-copy">
+    <div class="nx-head">
+     <span class="eyebrow">How it works</span>
+     <h2 id="night-title">Your night, one move at a time</h2>
+     <p class="nx-lead">A night at Gameplex takes four moves.</p>
+    </div>
+    <ol class="nx-list">
+     {steps.map((s, i) => (
+      <li class={`nx-item ${i === 0 ? 'on' : ''}`} data-i={i}>
+       <h3 class="nx-h"><button type="button" class="nx-btn" data-i={i} aria-current={i === 0 ? 'step' : undefined}><span class="nx-n">{s.n}</span><span class="nx-t">{s.title}</span></button></h3>
+       <div class="nx-body"><div><p>{s.text}</p></div></div>
+       <span class="nx-bar" aria-hidden="true"><b></b></span>
+      </li>
+     ))}
+    </ol>
+   </div>
+
+   <div class="nx-scene" aria-hidden="true">
+    <div class="nx-glow"></div>
+    <div class="nx-world">
+     <div class="nx-board">
+      <div class="nx-shadow"></div>
+      {boardSlices.map((d) => <div class="nx-bs" style={`--d:${d}px`}></div>)}
+      <div class="nx-bface"><span class="nx-logo">GAMEPLEX</span></div>
+      {cards.map((c, i) => (
+       <div class={`nc ${i === 0 ? 'on' : ''}`} data-i={i} data-z={c.z} style={`left:${c.x}px;top:${c.y}px;width:${c.w}px;height:${c.h}px;--z:${c.z}px`}>
+        {cardSlices.map((d) => <div class="nc-sl" style={`--d:${d}px`}></div>)}
+        <div class="nc-face">
+         <span class="nc-tag"><b>0{i + 1}</b>{c.tag}</span>
+         <strong class="nc-big">{c.big}{c.unit && <small>{c.unit}</small>}</strong>
+         {c.small && <span class="nc-small">{c.small}</span>}
+         <span class="nc-chips">{c.chips.map((t) => <i>{t}</i>)}</span>
+         <span class="nc-spot"></span>
+        </div>
+       </div>
+      ))}
+     </div>
+    </div>
+    <div class="nx-icons">
+     {cards.map((c) => <div class="nx-ic" data-size={c.size}><img src={`/img/glass/${c.icon}.webp`} alt="" width="560" height="560" decoding="async" loading="lazy"></div>)}
+    </div>
+   </div>
+  </div>
+ </div>
+</section>
+
+<style is:global>
+@property --fly{syntax:'<number>';inherits:true;initial-value:0}
+.nx{position:relative;height:420vh;background:var(--night);padding:0}
+.nx-stage{position:sticky;top:0;height:100vh;height:100svh;min-height:640px;overflow:hidden;
+  background:radial-gradient(55% 60% at 68% 58%,rgb(110 50 230 / .34),transparent 70%),radial-gradient(35% 35% at 72% 88%,rgb(255 80 200 / .10),transparent 70%),var(--night)}
+.nx-wrap{height:100%;max-width:1268px;margin:0 auto;padding:calc(var(--head-h) + 24px) 24px 32px;display:grid;grid-template-columns:minmax(300px,430px) 1fr;gap:24px;align-items:center}
+
+/* the step list */
+.nx-head h2{font-size:clamp(1.9rem,3.2vw,2.9rem);line-height:1.02;margin:0 0 10px}
+.nx-lead{color:var(--muted);margin:0 0 26px}
+.nx-list{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.nx-item{position:relative;border-radius:18px;padding:12px 16px 16px;transition:background .4s,box-shadow .4s}
+.nx-item.on{background:linear-gradient(160deg,rgb(255 255 255 / .12),rgb(255 255 255 / .04));box-shadow:inset 0 1px 0 rgb(255 255 255 / .3),inset 0 0 0 1px rgb(255 255 255 / .1),0 14px 34px rgb(0 0 0 / .35);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.nx-h{margin:0;font-size:inherit;line-height:inherit}
+.nx-btn{appearance:none;background:none;border:0;padding:0;margin:0;color:inherit;font:inherit;cursor:pointer;display:flex;align-items:center;gap:14px;width:100%;text-align:left}
+.nx-n{flex:none;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font:800 1rem/1 var(--display);border:2px solid rgb(197 155 255 / .45);color:#fff;transition:background .3s,border-color .3s,color .3s,box-shadow .3s}
+.nx-t{font:800 clamp(1.1rem,1.6vw,1.45rem)/1.15 var(--display);letter-spacing:-.01em;color:rgb(226 214 255 / .5);transition:color .3s}
+.nx-btn:hover .nx-t,.nx-item.on .nx-t{color:#fff}
+.nx-item.done .nx-n{background:rgb(255 212 71 / .14);border-color:var(--ticket);color:var(--ticket)}
+.nx-item.on .nx-n{background:var(--ticket);border-color:#fff;color:var(--ink);box-shadow:0 0 18px rgb(255 212 71 / .6)}
+.nx-body{display:grid;grid-template-rows:0fr;transition:grid-template-rows .45s var(--ease)}
+.nx-body>div{overflow:hidden}
+.nx-item.on .nx-body{grid-template-rows:1fr}
+.nx-body p{margin:10px 0 0 50px;color:#E2D6FF;font-size:1rem;text-align:justify;hyphens:auto}
+.nx-bar{position:absolute;left:66px;right:18px;bottom:7px;height:2px;border-radius:2px;background:rgb(255 255 255 / .08);opacity:0;transition:opacity .3s}
+.nx-item.on .nx-bar{opacity:1}
+.nx-bar b{display:block;height:100%;width:var(--p,0%);border-radius:2px;background:var(--ticket);box-shadow:0 0 8px var(--ticket)}
+
+/* the 3D scene */
+.nx-scene{position:relative;height:100%;min-height:0;perspective:1900px;perspective-origin:50% 30%;pointer-events:auto}
+.nx-glow{position:absolute;left:50%;top:60%;width:86%;aspect-ratio:1.25;transform:translate(-50%,-50%);background:radial-gradient(closest-side,rgb(124 60 255 / .42),rgb(124 60 255 / .1) 60%,transparent);pointer-events:none}
+.nx-world{position:absolute;left:50%;top:var(--wy,63%);width:0;height:0;transform-style:preserve-3d;--rx:52deg;--rz:36deg;--fit:1;--lift:0px;
+  transform:translateY(var(--lift)) scale3d(var(--fit),var(--fit),var(--fit)) rotateX(var(--rx)) rotateZ(var(--rz))}
+.nx-board{position:absolute;left:-220px;top:-300px;width:440px;height:600px;transform-style:preserve-3d}
+.nx-shadow{position:absolute;inset:-40px;border-radius:80px;transform:translateZ(-40px);background:radial-gradient(closest-side,rgb(5 0 15 / .9),rgb(5 0 15 / .4) 70%,rgb(5 0 15 / 0))}
+.nx-bs{position:absolute;inset:0;border-radius:44px;transform:translateZ(calc(var(--d) * -1));border:2px solid #3A2763;background:rgb(16 8 32 / .5)}
+.nx-bs:last-of-type{background:#0C0618;border-color:#4C3580}
+.nx-bface{position:absolute;inset:0;border-radius:44px;overflow:hidden;
+  background:
+    radial-gradient(70% 50% at 50% 100%,rgb(140 80 255 / .28),transparent 70%),
+    repeating-linear-gradient(0deg,rgb(197 155 255 / .07) 0 1px,transparent 1px 55px),
+    repeating-linear-gradient(90deg,rgb(197 155 255 / .07) 0 1px,transparent 1px 55px),
+    linear-gradient(160deg,#21113F,#0F0720 60%,#170A2E);
+  box-shadow:inset 0 0 0 1.5px rgb(200 170 255 / .45),inset 0 0 0 7px rgb(10 4 22 / .9),inset 0 0 0 8.5px rgb(160 110 255 / .3),0 0 70px rgb(120 60 255 / .35)}
+.nx-logo{position:absolute;left:0;right:0;bottom:14px;text-align:center;font:800 15px/1 var(--display);letter-spacing:.4em;color:rgb(197 155 255 / .45)}
+
+/* a glass card: outline slices underneath give the thickness, the face holds the UI */
+.nc{position:absolute;transform-style:preserve-3d;
+  transform:translate3d(calc(var(--fly) * -46px),calc(var(--fly) * -120px),calc(var(--z) + var(--fly) * 540px)) rotateZ(calc(var(--fly) * -14deg))}
+.nc>*{opacity:clamp(0,calc(1 - var(--fly) * 1.5),1)}
+.nc-sl{position:absolute;inset:0;border-radius:20px;transform:translateZ(calc(var(--d) * -1));border:1.5px solid rgb(190 165 255 / .4)}
+.nc-sl:first-child{background:rgb(70 30 170 / .22);border-color:rgb(220 200 255 / .55)}
+.nc-face{position:absolute;inset:0;border-radius:20px;padding:15px 18px;display:flex;flex-direction:column;align-items:flex-start;gap:6px;color:#fff;
+  background:linear-gradient(140deg,rgb(205 185 255 / .3),rgb(140 100 255 / .13) 45%,rgb(90 50 220 / .22));
+  border:1.5px solid rgb(225 210 255 / .5);
+  box-shadow:inset 0 1.5px 0 rgb(255 255 255 / .55),inset 0 -12px 30px rgb(120 70 255 / .25),0 0 40px rgb(120 70 255 / .32);
+  backdrop-filter:blur(7px) saturate(150%);-webkit-backdrop-filter:blur(7px) saturate(150%);
+  transition:border-color .4s,box-shadow .4s,background .4s}
+.nc.on .nc-face{border-color:rgb(255 255 255 / .85);
+  background:linear-gradient(140deg,rgb(220 200 255 / .38),rgb(150 105 255 / .2) 45%,rgb(110 60 240 / .3));
+  box-shadow:inset 0 1.5px 0 rgb(255 255 255 / .8),inset 0 -12px 30px rgb(140 90 255 / .35),0 0 70px rgb(150 100 255 / .6)}
+.nc-tag{display:inline-flex;align-items:center;gap:7px;font:700 11px/1 var(--hud);letter-spacing:.1em;text-transform:uppercase;padding:6px 10px;border-radius:999px;background:rgb(255 255 255 / .13);border:1px solid rgb(255 255 255 / .28)}
+.nc-tag b{color:var(--ticket)}
+.nc.on .nc-tag{background:var(--ticket);color:var(--ink);border-color:#fff}
+.nc.on .nc-tag b{color:var(--ink)}
+.nc-big{font:800 24px/1.05 var(--display);letter-spacing:-.02em;text-shadow:0 0 18px rgb(190 140 255 / .7);max-width:58%}
+.nc-big small{font:700 14px/1 var(--body);margin-left:6px;opacity:.85}
+.nc-small{font-size:13px;color:#DCCFFF;max-width:62%}
+.nc-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:auto;max-width:100%}
+.nc-chips i{font:600 11px/1 var(--body);font-style:normal;padding:5px 8px;border-radius:999px;background:rgb(255 255 255 / .12);border:1px solid rgb(255 255 255 / .22);white-space:nowrap}
+.nc-spot{position:absolute;left:calc(84% - 48px);top:calc(30% - 28px);width:96px;height:56px;border-radius:50%;background:radial-gradient(closest-side,rgb(200 150 255 / .55),rgb(120 60 255 / .18) 60%,transparent);pointer-events:none}
+/* the glass icons: a flat layer above the 3D scene (never cut by a glass card), each one stands on its card's spot */
+.nx-icons{position:absolute;inset:0;z-index:2;pointer-events:none}
+.nx-ic{position:absolute;left:0;top:0;width:100px;height:100px;opacity:0;will-change:transform}
+.nx-ic img{display:block;width:100%;height:100%;object-fit:contain;animation:icBob 4s ease-in-out infinite alternate;filter:drop-shadow(0 10px 18px rgb(40 10 110 / .55)) drop-shadow(0 0 18px rgb(190 120 255 / .35))}
+
+.no-js .nx{height:auto}
+.no-js .nx-stage{position:relative;height:auto}
+.no-js .nx-body{grid-template-rows:1fr}
+
+@media (max-width:1100px){
+  .nx-wrap{grid-template-columns:minmax(280px,360px) 1fr}
+}
+@media (max-width:860px){
+  .nx{height:400vh}
+  .nx-wrap{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr) auto;padding:calc(var(--head-h) + 10px) 14px 84px;gap:4px;align-items:stretch}
+  .nx-copy{display:contents}
+  .nx-head{grid-row:1}
+  .nx-scene{grid-row:2}
+  .nx-list{grid-row:3;gap:2px}
+  .nx-head .eyebrow{margin-bottom:6px}
+  .nx-head h2{font-size:1.45rem;margin:0}
+  .nx-lead{display:none}
+  .nx-item{padding:7px 10px 10px}
+  .nx-n{width:28px;height:28px;font-size:.85rem}
+  .nx-btn{gap:10px}
+  .nx-t{font-size:1rem}
+  .nx-body p{margin:6px 0 0 38px;font-size:.92rem}
+  .nx-bar{left:48px;right:12px;bottom:4px}
+  .nx-world{--wy:64%}
+  .nc-face,.nx-item.on{backdrop-filter:none;-webkit-backdrop-filter:none}
+}
+@keyframes icBob{from{transform:translateY(-5px) rotate(-3deg)}to{transform:translateY(4px) rotate(3deg)}}
+@media (prefers-reduced-motion:reduce){.nx-body{transition:none}.nx-ic img{animation:none}}
+</style>
+
+<script>
+  import { award, reduceMotion } from '../../lib/global';
+  const section = document.getElementById('how')!;
+  const scene = section.querySelector<HTMLElement>('.nx-scene')!;
+  const world = section.querySelector<HTMLElement>('.nx-world')!;
+  const cards = Array.from(section.querySelectorAll<HTMLElement>('.nc'));
+  const items = Array.from(section.querySelectorAll<HTMLElement>('.nx-item'));
+  const btns = Array.from(section.querySelectorAll<HTMLButtonElement>('.nx-btn'));
+  const ics = Array.from(section.querySelectorAll<HTMLElement>('.nx-ic'));
+  const RM = reduceMotion();
+  // must match the CSS: perspective 1900px at 50% 30% of the scene, icon spot at 84% / 30% of each card
+  const PERS = 1900, SPOT = [0.84, 0.3];
+  const view = { sw: 0, sh: 0, wx: 0, wy: 0, fit: 1 };
+  let box: { x: number; y: number; w: number; h: number; z: number }[] = [];
+
+  const clamp01 = (t: number) => Math.max(0, Math.min(1, t));
+  const easeOut = (t: number) => 1 - (1 - t) ** 3;
+  // lands with a small dip under its place, like a card set down on glass
+  const easeBack = (t: number) => { const c1 = 1.3, c3 = c1 + 1; return 1 + c3 * (t - 1) ** 3 + c1 * (t - 1) ** 2; };
+
+  // pre: the section coming into view (board lies down, card 1 lands); seg: 0..4 across the pinned part
+  const tgt = { pre: 0, seg: 0, mx: 0, my: 0 };
+  const cur = { pre: 0, seg: 0, mx: 0, my: 0 };
+  let step = -1, visible = false, raf = 0, last = 0;
+
+  function read() {
+    const b = section.getBoundingClientRect(), vh = innerHeight;
+    tgt.pre = clamp01(1 - b.top / vh);
+    tgt.seg = clamp01(-b.top / Math.max(1, b.height - vh)) * 4;
+  }
+
+  function render() {
+    const ep = easeOut(cur.pre);
+    const rx = 30 + 22 * ep - cur.my * 5;
+    const rz = 14 + 24 * ep - cur.seg * 1.2 + cur.mx * 6;
+    world.style.setProperty('--rx', `${rx.toFixed(2)}deg`);
+    world.style.setProperty('--rz', `${rz.toFixed(2)}deg`);
+    world.style.setProperty('--lift', `${((1 - ep) * 140).toFixed(1)}px`);
+    cards.forEach((c, i) => {
+      const t = i === 0 ? clamp01((cur.pre - 0.45) / 0.5) : clamp01((cur.seg - (i - 0.6)) / 0.62);
+      const e = RM ? (t >= 0.5 ? 1 : 0) : t >= 1 ? 1 : easeBack(t);
+      const fly = 1 - e;
+      c.style.setProperty('--fly', fly.toFixed(4));
+      placeIcon(i, fly, rx, rz, (1 - ep) * 140);
+    });
+    const s = Math.min(3, Math.floor(tgt.seg + 1e-4));
+    if (s !== step) setStep(s);
+    items[step].style.setProperty('--p', `${(clamp01(cur.seg - step) * 100).toFixed(1)}%`);
+  }
+
+  // where a point of the 3D world lands on screen (same transforms as .nx-world / .nc)
+  function project(px: number, py: number, pz: number, rx: number, rz: number, lift: number): [number, number, number] {
+    const a = (rz * Math.PI) / 180, b = (rx * Math.PI) / 180;
+    const x = px * Math.cos(a) - py * Math.sin(a), y = px * Math.sin(a) + py * Math.cos(a);
+    const y2 = (y * Math.cos(b) - pz * Math.sin(b)) * view.fit, z2 = (y * Math.sin(b) + pz * Math.cos(b)) * view.fit;
+    const X = view.wx + x * view.fit, Y = view.wy + lift + y2, ox = view.sw * 0.5, oy = view.sh * 0.3, k = PERS / (PERS - z2);
+    return [ox + (X - ox) * k, oy + (Y - oy) * k, k];
+  }
+  function placeIcon(i: number, fly: number, rx: number, rz: number, lift: number) {
+    const c = box[i], el = ics[i];
+    if (!c || !el) return;
+    const r = (fly * -14 * Math.PI) / 180;
+    const lx = c.w * (SPOT[0] - 0.5), ly = c.h * (SPOT[1] - 0.5);
+    const px = c.x - 220 + c.w / 2 + lx * Math.cos(r) - ly * Math.sin(r) - fly * 46;
+    const py = c.y - 300 + c.h / 2 + lx * Math.sin(r) + ly * Math.cos(r) - fly * 120;
+    const [sx, sy, k] = project(px, py, c.z + fly * 540, rx, rz, lift);
+    const size = +(el.dataset.size || 100) * view.fit * k;
+    el.style.width = el.style.height = `${size.toFixed(1)}px`;
+    el.style.transform = `translate(${(sx - size / 2).toFixed(1)}px,${(sy - size * 0.9).toFixed(1)}px)`;
+    el.style.opacity = String(Math.max(0, Math.min(1, 1 - fly * 1.5)));
+  }
+
+  function setStep(s: number) {
+    step = s;
+    items.forEach((el, k) => { el.classList.toggle('on', k === s); el.classList.toggle('done', k < s); });
+    cards.forEach((el, k) => el.classList.toggle('on', k === s));
+    btns.forEach((b, k) => { if (k === s) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current'); });
+    if (s === 3) award('night', 'Made it round the board', 40, '♟');
+  }
+
+  function loop(now: number) {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    const k = RM ? 1 : 1 - (1 - 0.14) ** (dt * 60), km = 1 - (1 - 0.06) ** (dt * 60);
+    cur.pre += (tgt.pre - cur.pre) * k; cur.seg += (tgt.seg - cur.seg) * k;
+    cur.mx += (tgt.mx - cur.mx) * km; cur.my += (tgt.my - cur.my) * km;
+    render();
+    const moving = Math.abs(tgt.pre - cur.pre) + Math.abs(tgt.seg - cur.seg) + Math.abs(tgt.mx - cur.mx) + Math.abs(tgt.my - cur.my) > 0.0005;
+    raf = visible && moving ? requestAnimationFrame(loop) : 0;
+  }
+  function wake() { if (!raf) { last = performance.now(); raf = requestAnimationFrame(loop); } }
+
+  addEventListener('scroll', () => { read(); wake(); }, { passive: true });
+  if (matchMedia('(pointer:fine)').matches && !RM) {
+    scene.addEventListener('pointermove', (e) => {
+      const r = scene.getBoundingClientRect();
+      tgt.mx = (e.clientX - r.left) / r.width - 0.5; tgt.my = (e.clientY - r.top) / r.height - 0.5; wake();
+    });
+    scene.addEventListener('pointerleave', () => { tgt.mx = tgt.my = 0; wake(); });
+  }
+
+  // a step in the list jumps to the moment its layer has landed
+  btns.forEach((b, k) => b.addEventListener('click', () => {
+    const top = section.getBoundingClientRect().top + scrollY, span = section.offsetHeight - innerHeight;
+    scrollTo({ top: top + span * (k === 0 ? 0.02 : (k + 0.15) / 4), behavior: RM ? 'auto' : 'smooth' });
+  }));
+
+  // the scene scales to fit its box (world is about 780 x 700 px at fit 1)
+  function fit() {
+    const r = scene.getBoundingClientRect();
+    view.fit = +Math.max(0.3, Math.min(1.1, r.width / 780, r.height / 700)).toFixed(3);
+    world.style.setProperty('--fit', String(view.fit));
+    view.sw = r.width; view.sh = r.height; view.wx = world.offsetLeft; view.wy = world.offsetTop;
+    box = cards.map((c) => ({ x: c.offsetLeft, y: c.offsetTop, w: c.offsetWidth, h: c.offsetHeight, z: +(c.dataset.z || 0) }));
+    render();
+  }
+  new ResizeObserver(fit).observe(scene);
+  new IntersectionObserver(([en]) => { visible = en.isIntersecting; if (visible) { read(); wake(); } }, { rootMargin: '10% 0px' }).observe(section);
+  fit(); read(); cur.pre = tgt.pre; cur.seg = tgt.seg; render();
+</script>

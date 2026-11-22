@@ -1,0 +1,366 @@
+---
+// Neon dice stage (ideas: dice3d.app for the drop-in, toss and settle physics; the look comes from
+// Gameplex's own neon hallway photo: glowing LED dice on a dark floor between lit walls).
+// The hallway is CSS 3D; the dice are drawn with a tiny WebGL renderer (no library): a real rounded cube
+// with soft, pillowy corners like dice3d.app, lit like glowing LED dice. CSS dice stay as a fallback.
+// Events: listens for `dice:roll` on #diceStage, fires `dice:settled` when the die comes to rest.
+const pips: Record<number, number[][]> = {
+  1: [[50, 50]], 2: [[27, 27], [73, 73]], 3: [[25, 25], [50, 50], [75, 75]],
+  4: [[27, 27], [73, 27], [27, 73], [73, 73]], 5: [[25, 25], [75, 25], [50, 50], [25, 75], [75, 75]],
+  6: [[27, 22], [73, 22], [27, 50], [73, 50], [27, 78], [73, 78]],
+};
+const faces = [{ n: 1, c: 'fr' }, { n: 6, c: 'bk' }, { n: 3, c: 'rt' }, { n: 4, c: 'lf' }, { n: 2, c: 'tp' }, { n: 5, c: 'bt' }];
+// dice resting further down the hallway, like the photo
+const scenery = [
+  { x: -78, z: -360, ry: 28, color: '#FF9A4D' },
+  { x: 70, z: -560, ry: -18, color: '#D08CF4' },
+  { x: -28, z: -780, ry: 12, color: '#FF3B4E' },
+];
+---
+<div class="dice-stage" id="diceStage" role="button" tabindex="0" aria-label="Roll the dice">
+ <div class="world">
+  <div class="floor"><div class="planks"></div>
+   {scenery.map((d) => <i class="pool bg" style={`--c:${d.color};left:calc(50% + ${d.x}px);top:calc(64.3% + ${d.z}px)`}></i>)}
+   <i class="shadow" id="diceShadow"></i>
+   <i class="pool main" id="dicePool"></i>
+  </div>
+  <div class="wall left"><i class="led top"></i><i class="led bottom"></i></div>
+  <div class="wall right"><i class="led top"></i><i class="led bottom"></i></div>
+  <div class="back"><span class="exit">EXIT</span><span class="door"></span></div>
+
+  {scenery.map((d) => (
+   <div class="die bg" style={`--c:${d.color};transform:translate3d(${d.x}px,calc(var(--h) * -1),${d.z}px) rotateY(${d.ry}deg)`}>
+    {faces.map((f) => <div class={`face ${f.c}`}>{pips[f.n].map(([x, y]) => <i style={`left:${x}%;top:${y}%`}></i>)}</div>)}
+   </div>
+  ))}
+
+  <div class="die main" id="dieMain">
+   {faces.map((f) => <div class={`face ${f.c}`}>{pips[f.n].map(([x, y]) => <i style={`left:${x}%;top:${y}%`}></i>)}</div>)}
+  </div>
+ </div>
+ {scenery.map((d, i) => <i class="halo bg" data-i={i} style={`--c:${d.color}`}></i>)}
+ <i class="halo main" id="diceHalo"></i>
+ <canvas class="dice-gl" id="diceGL" aria-hidden="true"></canvas>
+ <span class="tap-hint" aria-hidden="true">TAP THE DICE</span>
+</div>
+
+<style is:global>
+.dice-stage{--neon:#3DF2E0;--h:55px;position:relative;width:min(100%,560px);height:440px;border-radius:30px;overflow:hidden;cursor:pointer;
+  perspective:720px;perspective-origin:50% 22%;background:radial-gradient(120% 90% at 50% 10%,#2A1A7A,#0D0830 60%,#06041A);
+  box-shadow:0 30px 60px rgba(0,0,0,.45),inset 0 0 0 1px rgba(160,140,255,.25);outline-offset:4px;-webkit-tap-highlight-color:transparent}
+.dice-stage .world{position:absolute;left:50%;top:80%;width:0;height:0;transform-style:preserve-3d;transform:scale(var(--k,1))}
+
+/* hallway */
+.dice-stage .floor{position:absolute;width:520px;height:1400px;left:-260px;top:-900px;transform:rotateX(90deg);transform-origin:50% 64.3%;
+  background:linear-gradient(180deg,#05030f 0%,#140c3a 60%,#1e1450 100%)}
+.dice-stage .planks{position:absolute;inset:0;background:repeating-linear-gradient(90deg,rgba(255,255,255,.05) 0 2px,transparent 2px 64px),linear-gradient(180deg,transparent 40%,rgba(120,110,255,.16));}
+.dice-stage .wall{position:absolute;width:1400px;height:520px;top:-520px;transform-style:preserve-3d;
+  background:linear-gradient(90deg,#0a0620 0%,#2B1C8C 70%,#4A2BD0 100%)}
+.dice-stage .wall::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,rgba(0,0,0,.35) 0 2px,transparent 2px 180px),linear-gradient(180deg,rgba(160,120,255,.25),transparent 30%,transparent 70%,rgba(255,80,200,.18))}
+.dice-stage .wall.left{left:-260px;transform-origin:0 50%;transform:translateZ(500px) rotateY(90deg)}
+.dice-stage .wall.right{left:260px;transform-origin:0 50%;transform:translateZ(500px) rotateY(90deg)}
+.dice-stage .led{position:absolute;left:0;right:0;height:4px;background:#7FA0FF;box-shadow:0 0 12px 3px #5C7CFF,0 0 40px 10px rgba(92,124,255,.5)}
+.dice-stage .led.top{top:0}.dice-stage .led.bottom{bottom:0;background:#C08CFF;box-shadow:0 0 10px 2px #A36BFF,0 0 30px 8px rgba(163,107,255,.45)}
+.dice-stage .back{position:absolute;width:520px;height:520px;left:-260px;top:-520px;transform:translateZ(-900px);background:linear-gradient(180deg,#0c0828,#1a1250);display:grid;justify-items:center}
+.dice-stage .door{position:absolute;bottom:0;width:150px;height:300px;background:linear-gradient(180deg,#120d34,#060414);border:3px solid #2c2370}
+.dice-stage .exit{position:absolute;top:150px;font:700 26px/1 Arial,sans-serif;color:#FF4D5E;text-shadow:0 0 10px #FF2E45,0 0 26px #FF2E45;letter-spacing:2px}
+
+/* dice */
+.dice-stage .die{position:absolute;left:calc(var(--h) * -1);top:calc(var(--h) * -1);width:calc(var(--h) * 2);height:calc(var(--h) * 2);transform-style:preserve-3d}
+.dice-stage .die.main{--c:var(--neon);will-change:transform}
+.js .dice-stage .die.main{transform:translate3d(0,-900px,0)}
+.no-js .dice-stage .die.main{transform:translate3d(0,calc(var(--h) * -1),0) rotateX(-12deg) rotateY(30deg)}
+.dice-stage .face{position:absolute;inset:0;border-radius:24%;backface-visibility:hidden;background-color:var(--c);
+  background-image:radial-gradient(circle at 50% 46%,rgba(255,255,255,.92) 0,rgba(255,255,255,.55) 32%,rgba(255,255,255,0) 72%);
+  box-shadow:0 0 22px 2px var(--c),inset 0 0 18px rgba(255,255,255,.55);transition:background-color .45s ease}
+.dice-stage .face i{position:absolute;width:15%;height:15%;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle at 45% 40%,#2a2350,#07051a 70%)}
+.dice-stage .fr{transform:translateZ(var(--h))}.dice-stage .bk{transform:rotateY(180deg) translateZ(var(--h))}
+.dice-stage .rt{transform:rotateY(90deg) translateZ(var(--h))}.dice-stage .lf{transform:rotateY(-90deg) translateZ(var(--h))}
+.dice-stage .tp{transform:rotateX(90deg) translateZ(var(--h))}.dice-stage .bt{transform:rotateX(-90deg) translateZ(var(--h))}
+/* WebGL dice on top of the CSS hallway; the CSS dice only show when WebGL is missing */
+.dice-stage .dice-gl{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
+.dice-stage.gl-on .die{display:none}
+.dice-stage .halo{position:absolute;left:0;top:0;width:240px;height:240px;margin:-120px 0 0 -120px;border-radius:50%;pointer-events:none;z-index:1;opacity:0;
+  background:radial-gradient(closest-side,color-mix(in srgb,var(--c) 60%,transparent),color-mix(in srgb,var(--c) 14%,transparent) 60%,transparent);transition:background .45s}
+.dice-stage .halo.main{--c:var(--neon)}
+.dice-stage.gl-on .halo{opacity:1}
+
+/* light on the floor */
+.dice-stage .pool{position:absolute;width:300px;height:300px;margin:-150px 0 0 -150px;border-radius:50%;background:radial-gradient(closest-side,color-mix(in srgb,var(--c) 70%,transparent),color-mix(in srgb,var(--c) 18%,transparent) 55%,transparent);pointer-events:none}
+.dice-stage .pool.main{--c:var(--neon);left:50%;top:64.3%;transition:background .45s}
+.dice-stage .shadow{position:absolute;width:120px;height:120px;margin:-60px 0 0 -60px;left:50%;top:64.3%;border-radius:30%;background:radial-gradient(closest-side,rgba(0,0,0,.75),transparent);pointer-events:none}
+.dice-stage .tap-hint{position:absolute;left:0;right:0;top:16px;text-align:center;font:400 .62rem var(--hud);letter-spacing:.24em;color:rgba(200,190,255,.65);pointer-events:none}
+
+@media (max-width:640px){
+  .dice-stage{height:320px;border-radius:24px;--k:.74}
+}
+</style>
+
+<script>
+  import { reduceMotion } from '../../lib/global';
+  type V = [number, number, number];
+  type Q = [number, number, number, number];
+  const stage = document.getElementById('diceStage')!;
+  const die = document.getElementById('dieMain')!;
+  const pool = document.getElementById('dicePool')!;
+  const shadow = document.getElementById('diceShadow')!;
+  const NEON = ['#3DF2E0', '#FF8A3D', '#FF4FD8', '#B78CFF', '#FF3B5C', '#5BFF8F', '#4D7CFF', '#FFE14D'];
+  let colorIdx = 0;
+  const H = 55; // half size, px (matches --h)
+  const G = 3000; // gravity px/s²
+  const FLOOR_Z0 = 0;
+  const ROUND = 0.42; // corner radius as a share of the half size: big, soft, pillowy corners
+
+  const qmul = (a: Q, b: Q): Q => [
+    a[0] * b[0] - a[1] * b[1] - a[2] * b[2] - a[3] * b[3],
+    a[0] * b[1] + a[1] * b[0] + a[2] * b[3] - a[3] * b[2],
+    a[0] * b[2] - a[1] * b[3] + a[2] * b[0] + a[3] * b[1],
+    a[0] * b[3] + a[1] * b[2] - a[2] * b[1] + a[3] * b[0],
+  ];
+  const qnorm = (q: Q): Q => { const l = Math.hypot(...q) || 1; return [q[0] / l, q[1] / l, q[2] / l, q[3] / l]; };
+  const qaxis = (ax: V, ang: number): Q => { const l = Math.hypot(...ax) || 1, s = Math.sin(ang / 2); return [Math.cos(ang / 2), ax[0] / l * s, ax[1] / l * s, ax[2] / l * s]; };
+  const mat = (q: Q) => {
+    const [w, x, y, z] = q;
+    return [
+      [1 - 2 * (y * y + z * z), 2 * (x * y - w * z), 2 * (x * z + w * y)],
+      [2 * (x * y + w * z), 1 - 2 * (x * x + z * z), 2 * (y * z - w * x)],
+      [2 * (x * z - w * y), 2 * (y * z + w * x), 1 - 2 * (x * x + y * y)],
+    ];
+  };
+  const slerp = (a: Q, b: Q, t: number): Q => {
+    let d = a[0] * b[0] + a[1] * b[1] + a[2] * b[2] + a[3] * b[3];
+    if (d < 0) { b = [-b[0], -b[1], -b[2], -b[3]]; d = -d; }
+    if (d > 0.9995) return qnorm([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t, a[3] + (b[3] - a[3]) * t]);
+    const th = Math.acos(d), s = Math.sin(th), wa = Math.sin((1 - t) * th) / s, wb = Math.sin(t * th) / s;
+    return [a[0] * wa + b[0] * wb, a[1] * wa + b[1] * wb, a[2] * wa + b[2] * wb, a[3] * wa + b[3] * wb];
+  };
+  const rnd = (a: number, b: number) => a + Math.random() * (b - a);
+
+  // state (CSS axes: x right, y down, z toward the viewer; floor at y = 0)
+  let p: V = [0, -900, FLOOR_Z0], v: V = [0, 0, 0], w: V = [0, 0, 0];
+  let q: Q = qnorm(qaxis([1, 0.4, 0.2], 0.6));
+  let mode: 'fly' | 'settle' | 'rest' = 'rest';
+  let settleFrom: Q = q, settleTo: Q = q, settleT = 0, settleY0 = 0;
+  let raf = 0, last = 0, bounces = 0;
+
+  // ---------------- WebGL dice ----------------
+  const canvas = document.getElementById('diceGL') as HTMLCanvasElement;
+  const halo = document.getElementById('diceHalo')!;
+  const bgHalos = Array.from(stage.querySelectorAll<HTMLElement>('.halo.bg'));
+  const SCENE = [
+    { x: -78, z: -360, ry: 28, color: '#FF9A4D' },
+    { x: 70, z: -560, ry: -18, color: '#D08CF4' },
+    { x: -28, z: -780, ry: 12, color: '#FF3B4E' },
+  ];
+  const hex = (h: string): V => [parseInt(h.slice(1, 3), 16) / 255, parseInt(h.slice(3, 5), 16) / 255, parseInt(h.slice(5, 7), 16) / 255];
+  let colNow: V = hex(NEON[0]), colTo: V = hex(NEON[0]);
+  const glc = (() => { try { return canvas.getContext('webgl', { antialias: true, alpha: true, premultipliedAlpha: false }); } catch { return null; } })();
+  let glDraw: (() => void) | null = null;
+  const view = { w: 0, h: 0, k: 1 };
+  function projectPt(P: V): [number, number] {
+    const sx = view.w / 2 + view.k * P[0], sy = view.h * 0.8 + view.k * P[1], sz = view.k * P[2];
+    const f = 720 / (720 - sz);
+    return [view.w / 2 + (sx - view.w / 2) * f, view.h * 0.22 + (sy - view.h * 0.22) * f];
+  }
+  if (glc) {
+    const gl = glc;
+    const VS = `attribute vec3 aPos;attribute vec3 aNor;attribute vec2 aUV;attribute float aFace;
+uniform mat3 uRot;uniform vec3 uPos;uniform float uSize;uniform vec2 uRes;uniform float uK;
+varying vec3 vN;varying vec2 vUV;varying float vFace;
+void main(){vec3 P=uPos+uRot*(aPos*uSize);vec3 S=vec3(vec2(uRes.x*0.5,uRes.y*0.8)+uK*P.xy,uK*P.z);
+float f=720.0/(720.0-S.z);vec2 po=vec2(uRes.x*0.5,uRes.y*0.22);vec2 sc=po+(S.xy-po)*f;
+gl_Position=vec4(sc.x/uRes.x*2.0-1.0,1.0-sc.y/uRes.y*2.0,-S.z/2000.0,1.0);vN=uRot*aNor;vUV=aUV;vFace=aFace;}`;
+    const FS = `precision mediump float;varying vec3 vN;varying vec2 vUV;varying float vFace;uniform vec3 uColor;
+float pipD(vec2 p,float f){float s=0.4;float d=10.0;
+if(f==1.0||f==3.0||f==5.0)d=min(d,length(p));
+if(f>=2.0){d=min(d,length(p-vec2(-s,-s)));d=min(d,length(p-vec2(s,s)));}
+if(f>=4.0){d=min(d,length(p-vec2(-s,s)));d=min(d,length(p-vec2(s,-s)));}
+if(f==6.0){d=min(d,length(p-vec2(-s,0.0)));d=min(d,length(p-vec2(s,0.0)));}
+return d;}
+void main(){vec3 N=normalize(vN);vec3 L=normalize(vec3(-0.45,-1.0,0.75));vec3 V=normalize(vec3(0.0,-0.35,1.0));
+float ndl=max(dot(N,L),0.0);float ndv=max(dot(N,V),0.0);vec3 c=uColor;
+vec3 col=c*(0.42+0.42*ndl);
+col+=mix(c,vec3(1.0),0.7)*0.5*pow(ndv,1.5);
+vec3 Hh=normalize(L+V);col+=vec3(1.0)*0.5*pow(max(dot(N,Hh),0.0),40.0);
+col+=mix(c,vec3(1.0),0.35)*0.3*pow(1.0-ndv,2.2);
+float d=pipD(vUV,floor(vFace+0.5));float r=0.145;
+float m=1.0-smoothstep(r-0.03,r+0.008,d);
+float bowl=smoothstep(0.0,r,d);
+vec3 pip=mix(vec3(0.02,0.015,0.06),c*0.22,bowl*0.6);
+col=mix(col,pip,m);
+gl_FragColor=vec4(min(col,vec3(1.0)),1.0);}`;
+    const sh = (type: number, src: string) => { const o = gl.createShader(type)!; gl.shaderSource(o, src); gl.compileShader(o); return o; };
+    const prog = gl.createProgram()!;
+    gl.attachShader(prog, sh(gl.VERTEX_SHADER, VS)); gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FS)); gl.linkProgram(prog);
+    if (gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+      gl.useProgram(prog);
+      // rounded cube: push each point of a subdivided cube out from its inner box by the corner radius
+      const N = 26, r = ROUND, lim = 1 - r;
+      const FACES: { n: V; u: V; v: V; val: number }[] = [
+        { n: [0, 0, 1], u: [1, 0, 0], v: [0, 1, 0], val: 1 }, { n: [0, 0, -1], u: [-1, 0, 0], v: [0, 1, 0], val: 6 },
+        { n: [1, 0, 0], u: [0, 0, -1], v: [0, 1, 0], val: 3 }, { n: [-1, 0, 0], u: [0, 0, 1], v: [0, 1, 0], val: 4 },
+        { n: [0, -1, 0], u: [1, 0, 0], v: [0, 0, 1], val: 2 }, { n: [0, 1, 0], u: [1, 0, 0], v: [0, 0, -1], val: 5 },
+      ];
+      const pos: number[] = [], nor: number[] = [], uv: number[] = [], fc: number[] = [], idx: number[] = [];
+      for (const f of FACES) {
+        const base = pos.length / 3;
+        for (let i = 0; i <= N; i++) for (let j = 0; j <= N; j++) {
+          const a = -1 + (2 * i) / N, b = -1 + (2 * j) / N;
+          const pt = [0, 1, 2].map((k) => f.n[k] + a * f.u[k] + b * f.v[k]);
+          const qd = pt.map((c) => Math.max(-lim, Math.min(lim, c)));
+          const d = pt.map((c, k) => c - qd[k]); const l = Math.hypot(...d) || 1; const nn = d.map((c) => c / l);
+          pos.push(...qd.map((c, k) => c + r * nn[k])); nor.push(...nn); uv.push(a, b); fc.push(f.val);
+        }
+        for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) { const k = base + i * (N + 1) + j; idx.push(k, k + N + 1, k + 1, k + 1, k + N + 1, k + N + 2); }
+      }
+      const buf = (data: number[], loc: string, size: number) => {
+        const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
+        const at = gl.getAttribLocation(prog, loc); gl.enableVertexAttribArray(at); gl.vertexAttribPointer(at, size, gl.FLOAT, false, 0, 0);
+      };
+      buf(pos, 'aPos', 3); buf(nor, 'aNor', 3); buf(uv, 'aUV', 2); buf(fc, 'aFace', 1);
+      const ib = gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ib); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(idx), gl.STATIC_DRAW);
+      const U = (n: string) => gl.getUniformLocation(prog, n);
+      const uRot = U('uRot'), uPos = U('uPos'), uSize = U('uSize'), uRes = U('uRes'), uK = U('uK'), uColor = U('uColor');
+      gl.enable(gl.DEPTH_TEST);
+      const rotY = (deg: number) => { const a = (deg * Math.PI) / 180, c = Math.cos(a), si = Math.sin(a); return [c, 0, -si, 0, 1, 0, si, 0, c]; };
+      const drawDie = (rot: number[], P: V, col: V) => {
+        gl.uniformMatrix3fv(uRot, false, rot); gl.uniform3f(uPos, P[0], P[1], P[2]); gl.uniform1f(uSize, H); gl.uniform3f(uColor, col[0], col[1], col[2]);
+        gl.drawElements(gl.TRIANGLES, idx.length, gl.UNSIGNED_SHORT, 0);
+      };
+      glDraw = () => {
+        gl.viewport(0, 0, canvas.width, canvas.height);
+        gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        gl.uniform2f(uRes, view.w, view.h); gl.uniform1f(uK, view.k);
+        SCENE.forEach((d) => drawDie(rotY(d.ry), [d.x, -H, d.z], hex(d.color)));
+        const m = mat(q);
+        drawDie([m[0][0], m[1][0], m[2][0], m[0][1], m[1][1], m[2][1], m[0][2], m[1][2], m[2][2]], p, colNow);
+      };
+      stage.classList.add('gl-on');
+    }
+  }
+  function sizeGL() {
+    const b = stage.getBoundingClientRect(), dpr = Math.min(devicePixelRatio || 1, 2);
+    view.w = b.width; view.h = b.height; view.k = parseFloat(getComputedStyle(stage).getPropertyValue('--k')) || 1;
+    canvas.width = Math.round(b.width * dpr); canvas.height = Math.round(b.height * dpr);
+    SCENE.forEach((d, i) => { const [x, y] = projectPt([d.x, -H, d.z]); const sc = 720 / (720 - view.k * d.z); bgHalos[i].style.transform = `translate(${x}px,${y}px) scale(${sc * 0.9})`; });
+    draw();
+  }
+  new ResizeObserver(sizeGL).observe(stage);
+
+  function draw() {
+    const m = mat(q);
+    colNow = colNow.map((c, i) => c + (colTo[i] - c) * 0.12) as V;
+    if (glDraw) {
+      glDraw();
+      const [hx, hy] = projectPt(p);
+      halo.style.transform = `translate(${hx}px,${hy}px) scale(${720 / (720 - view.k * p[2])})`;
+    } else {
+      die.style.transform = `matrix3d(${m[0][0]},${m[1][0]},${m[2][0]},0,${m[0][1]},${m[1][1]},${m[2][1]},0,${m[0][2]},${m[1][2]},${m[2][2]},0,${p[0]},${p[1]},${p[2]},1)`;
+    }
+    const height = Math.max(0, -p[1] - H);
+    const k = Math.min(1, height / 420);
+    pool.style.transform = `translate(${p[0]}px,${p[2]}px) scale(${1 + k * 0.8})`;
+    pool.style.opacity = String(1 - k * 0.75);
+    shadow.style.transform = `translate(${p[0]}px,${p[2]}px) scale(${1 + k * 1.2})`;
+    shadow.style.opacity = String(Math.max(0, 0.9 - k * 1.4));
+  }
+
+  function step(dt: number) {
+    if (mode === 'fly') {
+      v[1] += G * dt;
+      p = [p[0] + v[0] * dt, p[1] + v[1] * dt, p[2] + v[2] * dt];
+      const wl = Math.hypot(...w);
+      if (wl > 1e-4) q = qnorm(qmul(qaxis(w, wl * dt), q));
+      // side walls and depth limits
+      if (Math.abs(p[0]) > 120) { p[0] = Math.sign(p[0]) * 120; v[0] *= -0.55; }
+      if (p[2] < -140 || p[2] > 40) { p[2] = Math.max(-140, Math.min(40, p[2])); v[2] *= -0.55; }
+      const m = mat(q);
+      const ext = H * ((1 - ROUND) * (Math.abs(m[1][0]) + Math.abs(m[1][1]) + Math.abs(m[1][2])) + ROUND);
+      if (p[1] + ext > 0) {
+        p[1] = -ext;
+        if (v[1] > 0) {
+          bounces++;
+          v[1] = -v[1] * 0.42;
+          v[0] *= 0.78; v[2] *= 0.78;
+          // the hit turns some of the spin into tumbling toward a face
+          w = [w[0] * 0.62 + rnd(-2, 2), w[1] * 0.7, w[2] * 0.62 + rnd(-2, 2)];
+        }
+        if (Math.abs(v[1]) < 220 || bounces > 4) {
+          // pick the face that points up most and ease onto it
+          let best = 0, bestAbs = -1;
+          for (let i = 0; i < 3; i++) { const a = Math.abs(m[1][i]); if (a > bestAbs) { bestAbs = a; best = i; } }
+          const s = m[1][best] > 0 ? -1 : 1;
+          const d: V = [m[0][best] * s, m[1][best] * s, m[2][best] * s];
+          const up: V = [0, -1, 0];
+          const ax: V = [d[1] * up[2] - d[2] * up[1], d[2] * up[0] - d[0] * up[2], d[0] * up[1] - d[1] * up[0]];
+          const ang = Math.acos(Math.max(-1, Math.min(1, d[0] * up[0] + d[1] * up[1] + d[2] * up[2])));
+          settleFrom = q;
+          settleTo = Math.hypot(...ax) < 1e-6 ? q : qnorm(qmul(qaxis(ax, ang), q));
+          settleT = 0; settleY0 = p[1];
+          mode = 'settle';
+        }
+      }
+    } else if (mode === 'settle') {
+      settleT = Math.min(1, settleT + dt / 0.34);
+      const e = 1 - Math.pow(1 - settleT, 3);
+      q = slerp(settleFrom, settleTo, e);
+      v[0] *= 0.86; v[2] *= 0.86;
+      p = [p[0] + v[0] * dt, settleY0 + (-H - settleY0) * e, p[2] + v[2] * dt];
+      if (settleT >= 1) {
+        mode = 'rest';
+        p[1] = -H;
+        stage.dispatchEvent(new CustomEvent('dice:settled'));
+      }
+    }
+  }
+
+  function loop(t: number) {
+    const dt = Math.min(1 / 30, last ? (t - last) / 1000 : 1 / 60);
+    last = t;
+    step(dt / 2); step(dt / 2);
+    draw();
+    if (mode !== 'rest') raf = requestAnimationFrame(loop); else { raf = 0; last = 0; }
+  }
+  function start() { if (!raf) { last = 0; raf = requestAnimationFrame(loop); } }
+
+  function setColor(c: string) { stage.style.setProperty('--neon', c); colTo = hex(c); }
+
+  function toss(fromAbove = false) {
+    bounces = 0;
+    if (fromAbove) {
+      p = [rnd(-50, 50), -760, rnd(-80, 20)];
+      v = [rnd(-60, 60), 0, rnd(-30, 40)];
+    } else {
+      v = [rnd(60, 170) * (p[0] > 0 ? -1 : 1), -rnd(980, 1180), rnd(-110, 30)];
+    }
+    w = [rnd(-18, 18), rnd(-14, 14), rnd(-18, 18)];
+    mode = 'fly';
+    start();
+  }
+
+  function roll() {
+    colorIdx = (colorIdx + 1) % NEON.length;
+    setColor(NEON[colorIdx]);
+    if (reduceMotion()) {
+      q = qnorm(qaxis([rnd(-1, 1), rnd(-1, 1), rnd(-1, 1)], rnd(0, Math.PI)));
+      const m = mat(q); let best = 0, bestAbs = -1;
+      for (let i = 0; i < 3; i++) { const a = Math.abs(m[1][i]); if (a > bestAbs) { bestAbs = a; best = i; } }
+      mode = 'fly'; p = [0, -H - 1, 0]; v = [0, 1, 0]; w = [0, 0, 0];
+      step(1 / 60); while (mode === 'settle') { settleT = 1; step(1 / 60); }
+      draw();
+      return;
+    }
+    toss(false);
+  }
+
+  stage.addEventListener('click', roll);
+  stage.addEventListener('keydown', (e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); roll(); } });
+  stage.addEventListener('dice:roll', roll);
+
+  // Entry: the die drops in from above and settles (dice3d-style). No result is announced for it.
+  setColor(NEON[0]);
+  let entered = false;
+  stage.addEventListener('dice:settled', () => { if (!entered) { entered = true; stage.dataset.ready = '1'; } }, { once: true });
+  if (reduceMotion()) { p = [0, -H, 0]; q = qnorm(qaxis([1, 0, 0], -0.3)); mode = 'fly'; v = [0, 1, 0]; step(1 / 60); while (mode === 'settle') { settleT = 1; step(1 / 60); } draw(); entered = true; }
+  else { draw(); toss(true); }
+</script>

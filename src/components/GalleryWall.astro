@@ -1,0 +1,196 @@
+---
+// Curved 3D gallery wall (idea: shutabug.com). Drag, use the arrows, or just scroll past: the wall turns.
+// Click a photo to look closer.
+import type { Photo } from '../data/gallery';
+interface Props { photos: Photo[]; id?: string; title?: string }
+const { photos, id = 'wall' } = Astro.props;
+---
+<div class="wall-wrap" id={id} data-wall>
+ <div class="wall" tabindex="0" aria-label="Photo gallery. Use the left and right arrow keys to turn the wall." role="region">
+  <div class="arch" aria-hidden="true"></div>
+  <div class="floor" aria-hidden="true"></div>
+  <div class="ring">
+   {photos.map((p, i) => (
+    <button class="frame" type="button" data-i={i} aria-label={`Open photo: ${p.alt}`}>
+     <img src={p.src} alt={p.alt} loading={i < 6 ? 'eager' : 'lazy'} width={p.w} height={p.h} draggable="false" />
+     <span class="plaque">{p.caption ?? ''}</span>
+    </button>
+   ))}
+  </div>
+ </div>
+ <div class="wall-ui">
+  <p class="walking"><span>YOU ARE WALKING PAST</span><b data-caption>{photos[0]?.caption ?? ''}</b></p>
+  <div class="wall-arrows">
+   <button type="button" class="arr" data-dir="-1" aria-label="Turn left"><svg style="transform:scaleX(-1)"><use href="#i-arrow"/></svg></button>
+   <button type="button" class="arr" data-dir="1" aria-label="Turn right"><svg><use href="#i-arrow"/></svg></button>
+  </div>
+  <p class="hint">DRAG OR SCROLL TO WALK ROUND · CLICK A PHOTO TO LOOK CLOSER</p>
+ </div>
+
+ <dialog class="lightbox" aria-label="Photo viewer">
+  <button type="button" class="lb-close" aria-label="Close"><svg><use href="#i-close"/></svg></button>
+  <button type="button" class="lb-nav prev" aria-label="Previous photo"><svg style="transform:scaleX(-1)"><use href="#i-arrow"/></svg></button>
+  <figure><img alt="" /><figcaption></figcaption></figure>
+  <button type="button" class="lb-nav next" aria-label="Next photo"><svg><use href="#i-arrow"/></svg></button>
+ </dialog>
+ <script type="application/json" data-photos set:html={JSON.stringify(photos)} />
+</div>
+
+<style>
+.wall-wrap{position:relative}
+.wall{position:relative;height:min(68vh,600px);min-height:440px;perspective:900px;perspective-origin:50% 42%;overflow:hidden;cursor:grab;touch-action:pan-y;user-select:none;border-radius:32px;
+  background:radial-gradient(120% 60% at 50% 0%,#2A1150,transparent 60%),linear-gradient(180deg,#1C0B36,#130724 70%)}
+.wall:active{cursor:grabbing}
+.arch{position:absolute;inset:-30% -10% auto;height:70%;border-radius:0 0 50% 50%;background:radial-gradient(60% 80% at 50% 100%,rgba(157,92,255,.18),transparent 70%);pointer-events:none}
+.floor{position:absolute;left:-20%;right:-20%;bottom:-38%;height:70%;border-radius:50%;background:radial-gradient(closest-side,rgba(123,47,214,.4),rgba(43,17,80,.6) 60%,transparent);pointer-events:none}
+.ring{position:absolute;left:50%;top:44%;width:0;height:0;transform-style:preserve-3d;transform:translateZ(var(--tz,640px)) rotateY(var(--rot,0deg))}
+.frame{position:absolute;left:0;top:0;width:var(--fw,300px);margin:calc(var(--fw,300px) * -.38) 0 0 calc(var(--fw,300px) * -.5);padding:0;border:0;background:none;cursor:pointer;
+  transform:rotateY(var(--a)) translateZ(calc(var(--r,820px) * -1));transform-style:preserve-3d;backface-visibility:hidden;transition:filter .3s}
+.frame img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:6px;box-shadow:0 0 0 6px #F6F0FF,0 0 0 7px rgba(0,0,0,.2),0 30px 50px rgba(0,0,0,.55);pointer-events:none}
+.frame::before{content:"";position:absolute;inset:-26% -14% -40%;border-radius:50% 50% 40% 40%;background:radial-gradient(closest-side,rgba(255,240,200,.14),transparent);z-index:-1;pointer-events:none}
+.plaque{position:absolute;left:0;top:calc(100% + 14px);font:400 .58rem/1.3 var(--hud);color:var(--muted);background:rgba(246,240,255,.92);color:var(--ink);padding:5px 7px;border-radius:3px;max-width:80%;text-align:left}
+.plaque:empty{display:none}
+.frame:hover{filter:brightness(1.08)}
+.frame:focus-visible{outline:none}
+.frame:focus-visible img{box-shadow:0 0 0 6px var(--ticket),0 30px 50px rgba(0,0,0,.55)}
+
+.wall-ui{position:absolute;left:0;right:0;bottom:22px;display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:12px;padding:0 26px;pointer-events:none}
+.walking{grid-column:2;text-align:center;margin:0;display:grid;gap:6px}
+.walking span{font:400 .62rem var(--hud);letter-spacing:.18em;color:var(--muted)}
+.walking b{font:800 clamp(1.2rem,2.4vw,1.9rem)/1.05 var(--display);text-transform:uppercase;color:#fff;text-shadow:0 4px 20px rgba(0,0,0,.6);min-height:1em}
+.wall-arrows{grid-column:3;justify-self:end;display:flex;gap:8px;pointer-events:auto}
+.arr{width:46px;height:46px;border-radius:50%;border:2px solid var(--line-2);background:rgba(19,7,36,.6);display:grid;place-items:center;cursor:pointer;transition:border-color .2s,background .2s}
+.arr:hover{border-color:var(--ticket);background:rgba(43,17,80,.9)}
+.arr svg{width:18px;height:18px}
+.hint{position:absolute;right:26px;bottom:-30px;margin:0;font:400 .56rem var(--hud);letter-spacing:.1em;color:var(--muted)}
+
+.lightbox{border:0;padding:0;background:transparent;max-width:none;max-height:none;width:100vw;height:100vh;color:#fff}
+.lightbox::backdrop{background:rgba(10,4,20,.9);backdrop-filter:blur(6px)}
+.lightbox[open]{display:grid;place-items:center}
+.lightbox figure{margin:0;max-width:min(92vw,1100px);display:grid;gap:12px;animation:lbIn .35s var(--ease-out)}
+@keyframes lbIn{from{opacity:0;transform:scale(.94)}}
+.lightbox img{max-height:78vh;width:auto;max-width:100%;border-radius:14px;margin:0 auto}
+.lightbox figcaption{text-align:center;color:var(--muted);font-weight:600}
+.lb-close,.lb-nav{position:fixed;width:50px;height:50px;border-radius:50%;border:2px solid var(--line-2);background:rgba(43,17,80,.8);display:grid;place-items:center;cursor:pointer;z-index:2}
+.lb-close{top:18px;right:18px}.lb-nav.prev{left:18px;top:50%}.lb-nav.next{right:18px;top:50%}
+.lb-close svg,.lb-nav svg{width:20px;height:20px}
+
+@media (max-width:760px){
+  .wall{height:440px;min-height:0;border-radius:24px}
+  .wall-ui{grid-template-columns:1fr auto;padding:0 16px;bottom:16px}
+  .walking{grid-column:1;text-align:left}
+  .wall-arrows{grid-column:2}
+  .hint{display:none}
+}
+</style>
+
+<script>
+  import { reduceMotion, award } from '../lib/global';
+  type Photo = { src: string; alt: string; caption?: string; full?: string };
+  document.querySelectorAll<HTMLElement>('[data-wall]').forEach((root) => {
+    const wall = root.querySelector<HTMLElement>('.wall')!;
+    const ring = root.querySelector<HTMLElement>('.ring')!;
+    const frames = Array.from(root.querySelectorAll<HTMLElement>('.frame'));
+    const photos: Photo[] = JSON.parse(root.querySelector('[data-photos]')!.textContent || '[]');
+    const cap = root.querySelector<HTMLElement>('[data-caption]')!;
+    const n = frames.length;
+    if (!n) return;
+    let step = 24, R = 820, TZ = 640, FW = 300;
+    function layout() {
+      const w = wall.clientWidth;
+      const small = w < 760;
+      FW = small ? Math.min(220, w * 0.56) : Math.min(320, w * 0.24);
+      R = small ? 520 : Math.max(760, w * 0.62);
+      TZ = R * 0.78;
+      step = (Math.atan((FW * 1.28) / R) * 180) / Math.PI;
+      root.style.setProperty('--fw', FW + 'px');
+      root.style.setProperty('--r', R + 'px');
+      root.style.setProperty('--tz', TZ + 'px');
+      frames.forEach((f, i) => f.style.setProperty('--a', -i * step + 'deg'));
+    }
+    layout();
+    addEventListener('resize', layout);
+
+    let rot = 0, target = 0, vel = 0, dragging = false, lastX = 0, startX = 0, moved = 0, current = -1;
+    const maxRot = (n - 1) * step;
+    rot = target = Math.min(2, n - 1) * step;
+    const clamp = (v: number) => Math.max(-step * 0.4, Math.min(maxRot + step * 0.4, v));
+    function paint() {
+      ring.style.setProperty('--rot', rot + 'deg');
+      let best = 0, bestD = 999;
+      frames.forEach((f, i) => {
+        const d = Math.abs(rot - i * step);
+        f.style.visibility = d > 75 ? 'hidden' : 'visible';
+        f.style.opacity = String(d > 55 ? Math.max(0, 1 - (d - 55) / 20) : 1);
+        f.tabIndex = d < step / 2 ? 0 : -1;
+        if (d < bestD) { bestD = d; best = i; }
+      });
+      if (best !== current) { current = best; cap.textContent = photos[best]?.caption || photos[best]?.alt || ''; }
+    }
+    function loop() {
+      if (!dragging) {
+        vel *= 0.92;
+        target = clamp(target + vel);
+        if (Math.abs(vel) < 0.02) { // ease to the nearest photo
+          const snap = Math.round(target / step) * step;
+          target += (snap - target) * 0.08;
+        }
+      }
+      rot += (target - rot) * 0.12;
+      paint();
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+
+    wall.addEventListener('pointerdown', (e) => { dragging = true; lastX = startX = e.clientX; moved = 0; vel = 0; });
+    addEventListener('pointermove', (e) => {
+      if (!dragging) return;
+      const dx = e.clientX - lastX; lastX = e.clientX; moved = Math.max(moved, Math.abs(e.clientX - startX));
+      target = clamp(target - dx * 0.09); vel = -dx * 0.09;
+      if (moved > 40) award('walk', 'Took a walk round the gallery', 20, '🖼');
+    });
+    addEventListener('pointerup', () => { dragging = false; });
+    wall.addEventListener('wheel', (e) => {
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) { e.preventDefault(); target = clamp(target + e.deltaX * 0.05); }
+    }, { passive: false });
+    wall.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight') { target = clamp(Math.round(target / step) * step + step); e.preventDefault(); }
+      if (e.key === 'ArrowLeft') { target = clamp(Math.round(target / step) * step - step); e.preventDefault(); }
+    });
+    root.querySelectorAll<HTMLButtonElement>('.arr').forEach((b) => b.addEventListener('click', () => {
+      target = clamp(Math.round(target / step) * step + +b.dataset.dir! * step);
+    }));
+    // Turning with page scroll (no scroll lock: the page keeps scrolling normally)
+    if (!reduceMotion()) {
+      let lastY = scrollY;
+      addEventListener('scroll', () => {
+        const r = wall.getBoundingClientRect();
+        const dy = scrollY - lastY; lastY = scrollY;
+        if (r.bottom > 0 && r.top < innerHeight && !dragging) target = clamp(target + dy * 0.035);
+      }, { passive: true });
+    }
+
+    // Lightbox
+    const dlg = root.querySelector<HTMLDialogElement>('.lightbox')!;
+    const img = dlg.querySelector('img')!, fc = dlg.querySelector('figcaption')!;
+    let at = 0;
+    function open(i: number) {
+      at = (i + n) % n;
+      img.src = photos[at].full || photos[at].src; img.alt = photos[at].alt;
+      fc.textContent = photos[at].caption || photos[at].alt;
+      if (!dlg.open) dlg.showModal();
+    }
+    frames.forEach((f, i) => f.addEventListener('click', () => {
+      if (moved > 8) return;
+      if (Math.abs(rot - i * step) > step / 2) { target = clamp(i * step); return; } // first click brings it to the centre
+      open(i);
+      award('closer', 'Looked closer', 15, '🔍');
+    }));
+    root.addEventListener('wall:open', (e) => open((e as CustomEvent<number>).detail));
+    dlg.querySelector('.lb-close')!.addEventListener('click', () => dlg.close());
+    dlg.querySelector('.prev')!.addEventListener('click', () => open(at - 1));
+    dlg.querySelector('.next')!.addEventListener('click', () => open(at + 1));
+    dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
+    dlg.addEventListener('keydown', (e) => { if (e.key === 'ArrowRight') open(at + 1); if (e.key === 'ArrowLeft') open(at - 1); });
+  });
+</script>
